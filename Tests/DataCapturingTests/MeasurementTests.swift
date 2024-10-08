@@ -19,7 +19,8 @@
 
 import XCTest
 import CoreMotion
-import CoreData
+import Combine
+@testable import DataCapturing
 
 /**
  This test is intended to test capturing some data in isolation.
@@ -37,6 +38,19 @@ class MeasurementTests: XCTestCase {
         - `DataCapturingError.isPaused` if the service was paused and thus starting or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
      */
     func testStartStop_HappyPath() async throws {
+        let sensorCapturer = MocSensorCapturer()
+        let locationCapturer = MocLocationCapturer()
+        let measurement = MeasurementImpl(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer)
+        XCTAssertEqual(measurement.isPaused, false)
+        XCTAssertEqual(measurement.isRunning, false)
+
+        try measurement.start()
+        XCTAssertEqual(measurement.isPaused, false)
+        XCTAssertEqual(measurement.isRunning, true)
+
+        try measurement.stop()
+        XCTAssertEqual(measurement.isPaused, false)
+        XCTAssertEqual(measurement.isRunning, false)
     }
 
     /**
@@ -161,4 +175,30 @@ class MeasurementTests: XCTestCase {
     /// Tests that changing modality during a pause works as expected.
     func testChangeModalityWhilePaused_EventLogStillContainsModalityChange() throws {
     }
+}
+
+struct MocSensorCapturer: SensorCapturer {
+    let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
+    func start() -> AnyPublisher<DataCapturing.Message, Never> {
+        messageBus.send(Message.started(timestamp: Date()))
+        return messageBus.eraseToAnyPublisher()
+    }
+    
+    func stop() {
+        messageBus.send(Message.stopped(timestamp: Date()))
+    }
+}
+
+struct MocLocationCapturer: LocationCapturer {
+    let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
+    func start() -> AnyPublisher<DataCapturing.Message, Never> {
+        messageBus.send(Message.started(timestamp: Date()))
+        return messageBus.eraseToAnyPublisher()
+    }
+    
+    func stop() {
+        messageBus.send(Message.stopped(timestamp: Date()))
+    }
+    
+
 }
