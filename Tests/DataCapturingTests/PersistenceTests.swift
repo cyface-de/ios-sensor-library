@@ -30,16 +30,26 @@ import CoreData
 final class PersistenceTests: XCTestCase {
 
     var moc: NSManagedObjectContext?
+    /// This must be initialized into a static variable to avoid loading the model multiple times which causes errors during testing.
+    ///
+    /// See for example:
+    /// * https://stackoverflow.com/questions/51851485/multiple-nsentitydescriptions-claim-nsmanagedobject-subclass
+    static var managedObjectModel: NSManagedObjectModel = {
+        let bundle = Bundle.module
+
+            guard let url = bundle.url(forResource: "CyfaceModel", withExtension: "momd") else {
+                fatalError("Failed to locate momd file for xcdatamodeld")
+            }
+
+            guard let model = NSManagedObjectModel(contentsOf: url) else {
+                fatalError("Failed to load momd file for xcdatamodeld")
+            }
+
+            return model
+        }()
 
     override func setUpWithError() throws {
-        let bundle = Bundle.module
-        guard let modelURL = bundle.url(forResource: "CyfaceModel", withExtension: "momd") else {
-            return XCTFail()
-        }
-        guard let mom = NSManagedObjectModel(contentsOf: modelURL) else {
-            return XCTFail()
-        }
-        let persistentContainer = NSPersistentContainer(name: "CyfaceModel", managedObjectModel: mom)
+        let persistentContainer = NSPersistentContainer(name: "CyfaceModel", managedObjectModel: PersistenceTests.managedObjectModel)
         // This is appearantly the more recent version of loading a persistent store in memory.
         persistentContainer.persistentStoreDescriptions.first?.url  = URL(fileURLWithPath: "/dev/null")
         persistentContainer.loadPersistentStores { result, error in
