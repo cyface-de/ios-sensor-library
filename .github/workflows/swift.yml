@@ -19,7 +19,7 @@ jobs:
     - name: Check for Simulators
       run: xcrun simctl list
     - name: Build
-      run: xcodebuild -destination "platform=iOS Simulator,name=iPhone 14 Pro Max,OS=16.0" -scheme DataCapturing SYMROOT="./build" build
+      run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing SYMROOT="./build" build
       #run: swift build -v
     - name: Run tests
       run: swift test -v
