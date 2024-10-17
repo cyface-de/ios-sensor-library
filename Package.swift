@@ -10,7 +10,8 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "DataCapturing",
-            targets: ["DataCapturing"]),
+            targets: ["DataCapturing"]
+        ),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -28,10 +29,22 @@ let package = Package(
                 "DataCompression",
                 .product(name: "SwiftProtobuf", package: "swift-protobuf")
             ],
-            path: "Sources"),
+            // path: "Sources",
+            resources: [
+                .process("Model/Migrations/V3toV4/V3toV4.xcmappingmodel"),
+                .process("Model/CyfaceModel.xcdatamodeld"),
+                .process("Model/Migrations/V10toV11/V10toV11.xcmappingmodel"),
+                .process("Model/Migrations/V7toV8/V7toV8.xcmappingmodel"),
+            ]
+        ),
         .testTarget(
             name: "DataCapturingTests",
             dependencies: ["DataCapturing"],
-            path: "Tests")
+            //path: "Tests",
+            exclude: ["Resources/README.md"],
+            resources: [
+                .process("Resources")
+            ]
+        )
     ]
 )

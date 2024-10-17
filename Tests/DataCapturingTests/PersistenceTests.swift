@@ -35,18 +35,18 @@ final class PersistenceTests: XCTestCase {
     /// See for example:
     /// * https://stackoverflow.com/questions/51851485/multiple-nsentitydescriptions-claim-nsmanagedobject-subclass
     static var managedObjectModel: NSManagedObjectModel = {
-        let bundle = Bundle.module
+        let bundle = XCTestCase.appBundle()!
 
-            guard let url = bundle.url(forResource: "CyfaceModel", withExtension: "momd") else {
-                fatalError("Failed to locate momd file for xcdatamodeld")
-            }
+        guard let url = bundle.url(forResource: "CyfaceModel", withExtension: "momd") else {
+            fatalError("Failed to locate momd file for xcdatamodeld")
+        }
 
-            guard let model = NSManagedObjectModel(contentsOf: url) else {
-                fatalError("Failed to load momd file for xcdatamodeld")
-            }
+        guard let model = NSManagedObjectModel(contentsOf: url) else {
+            fatalError("Failed to load momd file for xcdatamodeld")
+        }
 
-            return model
-        }()
+        return model
+    }()
 
     override func setUpWithError() throws {
         let persistentContainer = NSPersistentContainer(name: "CyfaceModel", managedObjectModel: PersistenceTests.managedObjectModel)
