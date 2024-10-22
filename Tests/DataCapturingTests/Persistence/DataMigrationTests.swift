@@ -197,6 +197,14 @@ class DataMigrationTest: XCTestCase {
         try assertV12(onContext: context)
     }
 
+    func testMigrationV12ToV13() throws {
+       // Arrange, Act
+        let context = try migrate(fromVersion: .version12, toVersion: .version13, usingTestData: "V12TestData")
+
+        // Assert
+        try assertV13(onContext: context)
+    }
+
     /**
      Migrates a test data store `fromVersion` to a not necessarily consecutive `toVersion` using a pregenerated data store as test data.
 
@@ -413,6 +421,11 @@ class DataMigrationTest: XCTestCase {
         XCTAssertTrue(migratedMeasurements[0].entity.attributesByName.keys.filter {$0=="isPartOfCleanedTrack"}.isEmpty)
     }
 
+    func assertV13(onContext context: NSManagedObjectContext) throws {
+        XCTAssertEqual(try context.fetch(UploadSession.fetchRequest()).count, 0)
+        XCTAssertEqual(try context.fetch(UploadTask.fetchRequest()).count, 0)
+    }
+
     /**
      A test used to create an input data storeage file used by other tests. This is skipped since it is usually only required to run once when a new version of the Cyface data model is released.
 
@@ -420,8 +433,8 @@ class DataMigrationTest: XCTestCase {
         - Unspecified *CoreData* errors on saving of the data model.
      */
     func skip_testExample() throws {
-        let dataModelVersion = "11"
-        let dataSetCreator = DataSetCreatorV11()
+        let dataModelVersion = "12"
+        let dataSetCreator = DataSetCreatorV12()
 
         let bundle = Bundle(for: DataMigrationTest.self)
 

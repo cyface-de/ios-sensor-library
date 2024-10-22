@@ -292,7 +292,7 @@ public class SensorValueSerializer: BinarySerializer {
     }
 
     /**
-         Deserializes the provided `data` into a `Serializable`. Only use this if your data is not compressed. Otherwise use `deserializeCompressed(:Data)`.
+         Deserializes the provided `data` into a `Serializable`. Only use this if your data is not compressed.
          - Parameters:
             - data: The `data` to deserialize
          - Returns: An object of type `Serializable` created from the provided `data`
@@ -374,26 +374,5 @@ class DiffValue<T: FixedWidthInteger> {
         }
         previousValue = ret.partialValue
         return ret.partialValue
-    }
-}
-
-/// Extension to the `BinaryInteger` class providing the functionality to extract some bytes.
-extension BinaryInteger {
-    /**
-     Extracts bytes from this object.
-
-     - Returns: The provided bytes as an array of 8 bit unsigned integers.
-     */
-    func extractBytes() -> [UInt8] {
-        var ret = [UInt8]()
-
-        var buffer = self
-        for _ in 0..<(self.bitWidth/8) {
-            let byteValue = UInt8(truncatingIfNeeded: buffer)
-            ret.append(byteValue)
-            buffer = buffer >> 8
-        }
-
-        return ret
     }
 }

@@ -28,11 +28,6 @@ extension GeoLocationMO {
     /// Initializes a managed object from an existing `GeoLocation`.
     convenience init(location: GeoLocation, context: NSManagedObjectContext) {
         self.init(context: context)
-        update(from: location)
-    }
-
-    /// Update this managed object with the values from the provided `GeoLocation`.
-    func update(from location: GeoLocation) {
         self.lat = location.latitude
         self.lon = location.longitude
         self.accuracy = location.accuracy
