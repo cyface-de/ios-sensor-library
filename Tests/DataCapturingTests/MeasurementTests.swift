@@ -17,7 +17,7 @@
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import XCTest
+import Testing
 import CoreMotion
 import Combine
 @testable import DataCapturing
@@ -29,8 +29,10 @@ import Combine
  - Version: 2.4.1
  - Since: 1.0.0
  */
-@available(macOS, unavailable)
-class MeasurementTests: XCTestCase {
+//@available(macOS, unavailable)
+struct MeasurementTests {
+
+    let measurement = MeasurementImpl(sensorCapturer: MocSensorCapturer(), locationCapturer: MocLocationCapturer())
 
     /**
      Checks correct workings of a simple start/stop lifecycle.
@@ -38,20 +40,18 @@ class MeasurementTests: XCTestCase {
      - Throws:
         - `DataCapturingError.isPaused` if the service was paused and thus starting or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
      */
+    @Test
     func testStartStop_HappyPath() async throws {
-        let sensorCapturer = MocSensorCapturer()
-        let locationCapturer = MocLocationCapturer()
-        let measurement = MeasurementImpl(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer)
-        XCTAssertEqual(measurement.isPaused, false)
-        XCTAssertEqual(measurement.isRunning, false)
+        try #require(measurement.isPaused == false)
+        try #require(measurement.isRunning == false)
 
         try measurement.start()
-        XCTAssertEqual(measurement.isPaused, false)
-        XCTAssertEqual(measurement.isRunning, true)
+        try #require(measurement.isPaused == false)
+        try #require(measurement.isRunning == true)
 
         try measurement.stop()
-        XCTAssertEqual(measurement.isPaused, false)
-        XCTAssertEqual(measurement.isRunning, false)
+        try #require(measurement.isPaused == false)
+        try #require(measurement.isRunning == false)
     }
 
     /**
@@ -67,7 +67,26 @@ class MeasurementTests: XCTestCase {
     /*func testStartPauseResumeStop_HappyPath() throws {
     }*/
 
+    @Test
     func testStartPauseResumeStopResumeStop() throws {
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
+
+        try measurement.start()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
+
+        try measurement.pause()
+        try #require(measurement.isPaused)
+        try #require(!measurement.isRunning)
+
+        try measurement.resume()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
+
+        try measurement.stop()
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
     }
 
     func testStartPauseStop_HappyPath() throws {

@@ -104,10 +104,9 @@ public class MeasurementImpl {
         - capturingQueue: The background queue to run data capturing on, so the UI is not blocked.
         - locationManagerFactory: A factory creating a *CoreLocation* `LocationManager` on demand. This can also be used to inject a mock implementation.
      */
-    @available(macOS, unavailable)
     public init(
         capturingQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated),
-        locationManagerFactory: (() -> LocationManager) = {
+        /*locationManagerFactory: (() -> LocationManager) = {
             let manager = CLLocationManager()
             manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
             manager.allowsBackgroundLocationUpdates = true
@@ -116,7 +115,7 @@ public class MeasurementImpl {
             manager.showsBackgroundLocationIndicator = true
             manager.distanceFilter = kCLDistanceFilterNone
             return manager
-        },
+        },*/
         sensorCapturer: SensorCapturer,
         locationCapturer: LocationCapturer
     ) {
