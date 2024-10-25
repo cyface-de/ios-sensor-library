@@ -34,6 +34,7 @@ This protocol defines a measurements data together with its lifecycle during dat
  - Version: 2.0.0
  - Since: 12.0.0
  */
+@available(iOS 14, macOS 10.15, *)
 public protocol Measurement {
     /// A combine subject used to receive messages during data capturing and forwarding them, to whoever wants to listen.
     var measurementMessages: AnyPublisher<Message, Never> { get }
@@ -66,6 +67,7 @@ public protocol Measurement {
  - Version: 10.2.0
  - Since: 1.0.0
  */
+@available(iOS 14, macOS 10.15, *)
 public class MeasurementImpl {
 
     // MARK: - Properties
@@ -102,6 +104,7 @@ public class MeasurementImpl {
         - capturingQueue: The background queue to run data capturing on, so the UI is not blocked.
         - locationManagerFactory: A factory creating a *CoreLocation* `LocationManager` on demand. This can also be used to inject a mock implementation.
      */
+    @available(macOS, unavailable)
     public init(
         capturingQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated),
         locationManagerFactory: (() -> LocationManager) = {
@@ -175,6 +178,7 @@ public class MeasurementImpl {
 
 // MARK: - Measurement
 
+@available(iOS 14, macOS 10.15, *)
 extension MeasurementImpl: Measurement {
     public var measurementMessages: AnyPublisher<Message, Never> {
         return messagesSubject.eraseToAnyPublisher()

@@ -23,6 +23,7 @@ import CoreLocation
 import os.log
 import Combine
 
+@available(iOS 14, macOS 10.15, *)
 public protocol LocationCapturer {
  func start() -> AnyPublisher<Message, Never>
  func stop()

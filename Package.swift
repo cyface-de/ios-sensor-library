@@ -26,15 +26,15 @@ let package = Package(
         .target(
             name: "DataCapturing",
             dependencies: [
-                "DataCompression",
+                .product(name: "DataCompression", package: "DataCompression"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf")
             ],
             // path: "Sources",
             resources: [
-                .process("Model/Migrations/V3toV4/V3toV4.xcmappingmodel"),
+                .process("Persistence/Migration/V3toV4/V3toV4.xcmappingmodel"),
                 .process("Model/CyfaceModel.xcdatamodeld"),
-                .process("Model/Migrations/V10toV11/V10toV11.xcmappingmodel"),
-                .process("Model/Migrations/V7toV8/V7toV8.xcmappingmodel"),
+                .process("Persistence/Migration/V10toV11/V10toV11.xcmappingmodel"),
+                .process("Persistence/Migration/V7toV8/V7toV8.xcmappingmodel"),
             ]
         ),
         .testTarget(

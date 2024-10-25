@@ -29,6 +29,7 @@ import Combine
  - Version: 2.4.1
  - Since: 1.0.0
  */
+@available(macOS, unavailable)
 class MeasurementTests: XCTestCase {
 
     /**

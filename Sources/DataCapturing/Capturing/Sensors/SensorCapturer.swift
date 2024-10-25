@@ -22,6 +22,7 @@ import CoreMotion
 import Combine
 import os.log
 
+@available(iOS 14, macOS 10.15, *)
 public protocol SensorCapturer {
     func start() -> AnyPublisher<Message, Never>
     func stop()
