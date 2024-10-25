@@ -19,6 +19,8 @@ jobs:
     - name: Check for Simulators
       run: xcrun simctl list
     - name: Build
-      run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing SYMROOT="./build" build
+      run: swift build -q
+      #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing SYMROOT="./build" build
     - name: Run tests
-      run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
+      run: swift test -q --enable-swift-testing
+      #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
