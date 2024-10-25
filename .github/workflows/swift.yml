@@ -22,5 +22,5 @@ jobs:
       run: swift build -q
       #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing SYMROOT="./build" build
     - name: Run tests
-      run: swift test -q --enable-swift-testing
+      run: swift test -q
       #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
