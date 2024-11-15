@@ -29,19 +29,12 @@ import Combine
  - Version: 2.4.1
  - Since: 1.0.0
  */
-//@available(macOS, unavailable)
 struct MeasurementTests {
 
-    let measurement = MeasurementImpl(sensorCapturer: MocSensorCapturer(), locationCapturer: MocLocationCapturer())
+    let measurement = MeasurementImpl(sensorCapturer: MockSensorCapturer(), locationCapturer: MockLocationCapturer())
 
-    /**
-     Checks correct workings of a simple start/stop lifecycle.
-
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-     */
-    @Test
-    func testStartStop_HappyPath() async throws {
+    @Test("Checks correct workings of a simple start/stop lifecycle.")
+    func startStop_HappyPath() async throws {
         try #require(measurement.isPaused == false)
         try #require(measurement.isRunning == false)
 
@@ -54,21 +47,8 @@ struct MeasurementTests {
         try #require(measurement.isRunning == false)
     }
 
-    /**
-     Checks the correct execution of a typical lifecylce with a pause in between.
-
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting, pausing it again or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-        - `DataCapturingError.notRunning` if the service was not running and thus pausing it makes no sense.
-        - `DataCapturingError.notPaused`: If the service was not paused and thus resuming it makes no sense.
-        - `DataCapturingError.isRunning`: If the service was running and thus resuming it makes no sense.
-        - `DataCapturingError.noCurrentMeasurement`: If no current measurement is available while resuming data capturing.
-     */
-    /*func testStartPauseResumeStop_HappyPath() throws {
-    }*/
-
-    @Test
-    func testStartPauseResumeStopResumeStop() throws {
+    @Test("Check that the complete cycle of starting and stopping with a pause and resume in between works as expected.")
+    func startPauseResumeStopResumeStop() throws {
         try #require(!measurement.isPaused)
         try #require(!measurement.isRunning)
 
@@ -89,135 +69,235 @@ struct MeasurementTests {
         try #require(!measurement.isRunning)
     }
 
-    func testStartPauseStop_HappyPath() throws {
+    @Test("Stopping directly from within a paused measurement should work.")
+    func startPauseStop_HappyPath() throws {
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
+
+        try measurement.start()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
+
+        try measurement.pause()
+        try #require(measurement.isPaused)
+        try #require(!measurement.isRunning)
+
+        try measurement.stop()
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
     }
 
-    /**
-     Checks that calling `start` twice causes no errors and is gracefully ignored.
+    @Test("Checks that calling `start` twice causes no errors and is gracefully ignored.")
+    func doubleStart() throws {
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
 
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-     */
-    func testDoubleStart() throws {
+        try measurement.start()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
+        
+        try measurement.start()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
     }
 
-    /**
-     Checks that calling resume on a stopped service twice causes the appropriate `DataCapturingError` and leaves the `DataCapturingService` in a state where stopping is still possible.
+    @Test("Check that resuming twice causes the expected error and leaves the Measurement in a state where stopping is possible.")
+    func doubleResume() throws {
+        try measurement.start()
 
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting, pausing it again or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-        - `DataCapturingError.notRunning` if the service was not running and thus pausing it makes no sense.
-        - `DataCapturingError.notPaused`: If the service was not paused and thus resuming it makes no sense.
-        - `DataCapturingError.isRunning`: If the service was running and thus resuming it makes no sense.
-        - `DataCapturingError.noCurrentMeasurement`: If no current measurement is available while resuming data capturing.
-     */
-    func testDoubleResume() throws {
+        try measurement.pause()
+
+        try measurement.resume()
+
+        #expect(throws: MeasurementError.notPaused) {
+            try measurement.resume()
+        }
+
+        try measurement.stop()
     }
 
-    /**
-     Checks that pausing the service multiple times causes the appropriate `DataCapturingError` and leave the service in a state, where it can still be resumed.
+    @Test("Checks that pausing the service multiple times causes the appropriate error and leave the service in a state, where it can still be resumed.")
+    func doublePause() throws {
+        try measurement.start()
 
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting, pausing it again or stopping it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-        - `DataCapturingError.notRunning` if the service was not running and thus pausing it makes no sense.
-        - `DataCapturingError.notPaused`: If the service was not paused and thus resuming it makes no sense.
-        - `DataCapturingError.isRunning`: If the service was running and thus resuming it makes no sense.
-        - `DataCapturingError.noCurrentMeasurement`: If no current measurement is available while resuming data capturing.
-     */
-    func testDoublePause() throws {
+        try measurement.pause()
+
+        #expect(throws: MeasurementError.notRunning) {
+            try measurement.pause()
+        }
+
+        try measurement.resume()
     }
 
-    /**
-     Checks that stopping a running service multiple times causes no errors and leaves the service in the expected stopped state.
+    @Test("Checks that stopping a running service multiple times causes the appropriate error and leaves the service in the expected stopped state.")
+    func doubleStop() throws {
+        try measurement.start()
+        try #require(!measurement.isPaused)
+        try #require(measurement.isRunning)
 
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus starting it makes no sense. If you need to continue call `resume(((DataCapturingEvent) -> Void))`.
-        - `DataCapturingError.isPaused` if the service was paused and thus stopping it makes no sense.
-     */
-    func testDoubleStop() throws {
+        try measurement.stop()
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
+
+        #expect(throws: MeasurementError.notRunning) {
+            try measurement.stop()
+        }
+        try #require(!measurement.isPaused)
+        try #require(!measurement.isRunning)
     }
 
-    /// Checks that pausing a not started service results in an exception and does not change the `DataCapturingService` state.
-    func testPauseFromIdle() {
+    @Test("Checks that pausing a not started service results in an exception and does not change the `Measurement` state.")
+    func pauseFromIdle() {
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
+
+        #expect(throws: MeasurementError.notRunning) {
+            try measurement.pause()
+        }
+
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
     }
 
-    /// Checks that resuming a not started service results in an exception and does not change the `DataCapturingService` state.
-    func testResumeFromIdle() {
+    @Test("Checks that resuming a not started service results in an exception and does not change the `Measurement` state.")
+    func resumeFromIdle() {
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
+
+        #expect(throws: MeasurementError.notPaused) {
+            try measurement.resume()
+        }
+
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
     }
 
-    /**
-     Checks that stopping a stopped service causes no errors and leave the `DataCapturingService` in a stopped state
+    @Test("Checks that stopping a stopped measurement causes no errors and leave the `Measurement` in a stopped state")
+    func stopFromIdle() throws {
+        try measurement.start()
 
-     - Throws:
-        - `DataCapturingError.isPaused` if the service was paused and thus stopping it makes no sense.
-    */
-    func testStopFromIdle() throws {
+        try measurement.stop()
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
+
+        #expect(throws: MeasurementError.notRunning) {
+            try measurement.stop()
+        }
+
+        #expect(!measurement.isPaused)
+        #expect(!measurement.isRunning)
     }
 
-    /**
-    Tests the performance of saving a batch of measurement data during data capturing.
-    This time must never exceed the time it takes to capture that data.
-
-     - Throws:
-        - PersistenceError.measurementNotCreatable(timestamp) If CoreData was unable to create the new entity.
-        - PersistenceError.noContext If there is no current context and no background context can be created. If this happens something is seriously wrong with CoreData.
-        - Some unspecified errors from within CoreData.
-     */
-    func testLifecyclePerformance() throws {
+    // TODO: These three should probably be in another struct
+    @Test("Tests whether using a reduced update interval for location update events, works as expected.")
+    func withLowerUpdateInterval_HappyPath() throws {
     }
 
-    /**
-     Tests whether using a reduced update interval for location update events, works as expected.
-
-     - Throws:
-        - `PersistenceError` If the currently captured measurement was not found in the database.
-        - Some unspecified errors from within *CoreData*.
-     */
-    func testWithLowerUpdateInterval_HappyPath() throws {
+    @Test("After the App has been paused very long iOS will kill it. This deletes the paused state in memory. This test checks that recreating this state from the database is successful.")
+    func resumeAfterLongPause_ShouldNotThrowAnException() throws {
     }
 
-    /// After the App has been paused very long iOS will kill it. This deletes the paused state in memory. This test checks that recreating this state from the database is successful.
-    func testResumeAfterLongPause_ShouldNotThrowAnException() throws {
+    @Test("In case there already is a paused measurement after App restart, starting should still be successful and just output a warning.")
+    func startPausedService_FinishesPausedMeasurementAndThrowsNoException() throws {
     }
 
-    /// In case there already is a paused measurement after App restart, starting should still be successful and just output a warning.
-    func testStartPausedService_FinishesPausedMeasurementAndThrowsNoException() throws {
+    @Test("Tests that starting a new measurement and changing the modality during runtime, creates two change events.")
+    func changeModality_EventLogContainsTwoModalities() async throws {
+        var messageLog = [String]()
+
+        try await confirmation() { confirmation in
+            let cancellable = measurement.events.sink(receiveCompletion: { _ in confirmation() } ) { message in
+                switch message {
+                case .started(timestamp: _):
+                    messageLog.append("started")
+                case .stopped(timestamp: _):
+                    messageLog.append("stopped")
+                case .modalityChanged(to: let modality):
+                    messageLog.append("changed to \(modality)")
+                default:
+                    Issue.record("Unexpected message \(message).")
+                }
+            }
+
+            measurement.changeModality(to: "BICYCLE")
+            try measurement.start()
+            measurement.changeModality(to: "CAR")
+            try measurement.stop()
+
+            cancellable.cancel()
+        }
+
+        try #require(messageLog.count == 4)
+        #expect("changed to BICYCLE" == messageLog[0])
+        #expect("started" == messageLog[1])
+        #expect("changed to CAR" == messageLog[2])
+        #expect("stopped" == messageLog[3])
     }
 
-    /// Tests that starting a new measurement and changing the modality during runtime, creates two change events.
-    func testChangeModality_EventLogContainsTwoModalities() throws {
-    }
+    @Test("Tests that changing modality during a pause works as expected.")
+    func changeModalityWhilePaused_EventLogStillContainsModalityChange() async throws {
+        var messageLog = [String]()
 
-    /// Tests that changing to the same modality twice does not produce a new modality change event.
-    func testChangeModalityToSameModalityTwice_EventLogStillContainsOnlyTwoModalities() throws {
-    }
+        try await confirmation { confirmation in
+            let cancellable = measurement.events.sink(receiveCompletion: { _ in
+                confirmation()
+            }, receiveValue: { message in
+                switch message {
+                case .modalityChanged(to: let modality):
+                    messageLog.append("\(modality)")
+                case .paused(timestamp: _):
+                    messageLog.append("paused")
+                case .resumed(timestamp: _):
+                    messageLog.append("resumed")
+                case .started(timestamp: _):
+                    messageLog.append("started")
+                case .stopped(timestamp: _):
+                    messageLog.append("stopped")
+                default:
+                    Issue.record("Encountered unexpected message: \(message)")
+                }
+            })
 
-    /// Tests that changing modality during a pause works as expected.
-    func testChangeModalityWhilePaused_EventLogStillContainsModalityChange() throws {
+            measurement.changeModality(to: "BICYCLE")
+            try measurement.start()
+            try measurement.pause()
+            measurement.changeModality(to: "CAR")
+            try measurement.resume()
+            try measurement.stop()
+            cancellable.cancel()
+        }
+
+        #expect(messageLog.count == 6)
+        #expect(messageLog[0] == "BICYCLE")
+        #expect(messageLog[1] == "started")
+        #expect(messageLog[2] == "paused")
+        #expect(messageLog[3] == "CAR")
+        #expect(messageLog[4] == "resumed")
+        #expect(messageLog[5] == "stopped")
     }
 }
 
-struct MocSensorCapturer: SensorCapturer {
+struct MockSensorCapturer: SensorCapturer {
     let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
     func start() -> AnyPublisher<DataCapturing.Message, Never> {
-        messageBus.send(Message.started(timestamp: Date()))
+        //messageBus.send(Message.started(timestamp: Date()))
         return messageBus.eraseToAnyPublisher()
     }
     
     func stop() {
-        messageBus.send(Message.stopped(timestamp: Date()))
+        //messageBus.send(Message.stopped(timestamp: Date()))
     }
 }
 
-struct MocLocationCapturer: LocationCapturer {
+struct MockLocationCapturer: LocationCapturer {
     let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
     func start() -> AnyPublisher<DataCapturing.Message, Never> {
-        messageBus.send(Message.started(timestamp: Date()))
+        //messageBus.send(Message.started(timestamp: Date()))
         return messageBus.eraseToAnyPublisher()
     }
     
     func stop() {
-        messageBus.send(Message.stopped(timestamp: Date()))
+        //messageBus.send(Message.stopped(timestamp: Date()))
     }
     
 

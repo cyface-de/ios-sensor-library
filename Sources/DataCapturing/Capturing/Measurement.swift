@@ -26,9 +26,20 @@ import os.log
 /**
 This protocol defines a measurements data together with its lifecycle during data capturing.
 
- This is probably the most central part of the Cyface SDK for iOS, as it steers the actual data capturing.
- Data received from this process could be stored to a data storage using for example an implementation of `DataStoreStack`.
- It can also be transmitted to a Cyface data collector server using using an implementation of `UploadProcess`.
+ # Data Capturing
+ This is the most central part of the Cyface SDK for iOS, as it steers the actual data capturing.
+ To run a measurement just call the `start` method.
+ To finish a measurement call `stop`.
+ The methods `pause` and `resume` interrupt a measurement, but allow a restart.
+ After having called `stop` calling start again does not work anymore and a new `Measurement` must be created.
+
+ # Data Storage
+ A measurements data sould be stored to a data storage using for example an implementation of ``DataStoreStack``.
+ Please have a look at that interface for further information about how to store data to local storage.
+
+ # Data Synchronization
+ Uploading data to a Cyfaca Data Collector Service is handled by implementations of ``UploadProcess``.
+ Please have a look at the documentation of that interface to get further infromation about how to synchronize captured data with the cloud.
 
  - Author: Klemens Muthmann
  - Version: 2.0.0
@@ -37,7 +48,7 @@ This protocol defines a measurements data together with its lifecycle during dat
 @available(iOS 14, macOS 10.15, *)
 public protocol Measurement {
     /// A combine subject used to receive messages during data capturing and forwarding them, to whoever wants to listen.
-    var measurementMessages: AnyPublisher<Message, Never> { get }
+    var events: AnyPublisher<Message, Never> { get }
     /// A flag to get information about whether this measurement is currently running (`true`) or not (`false`).
     var isRunning: Bool { get }
     /// A flag to get information about whether this measurement is currently paused (`true`) or not (`false`).
@@ -85,7 +96,7 @@ public class MeasurementImpl {
 
     private let locationCapturer: LocationCapturer
 
-    public var messagesSubject: PassthroughSubject<Message, Never>
+    private let _events: PassthroughSubject<Message, Never>
 
     /**
      A queue used to synchronize calls to the lifecycle methods `start`, `pause`, `resume` and `stop`.
@@ -126,7 +137,7 @@ public class MeasurementImpl {
         //self.locationCapturer = LocationCapturer(lifecycleQueue: lifecycleQueue, locationManagerFactory: locationManagerFactory)
         self.sensorCapturer = sensorCapturer
         self.locationCapturer = locationCapturer
-        self.messagesSubject = PassthroughSubject<Message, Never>()
+        self._events = PassthroughSubject<Message, Never>()
 
         self.isRunning = false
         self.isPaused = false
@@ -156,7 +167,7 @@ public class MeasurementImpl {
 
         messageCancellable = locationCapturer.start().receive(on: lifecycleQueue).merge(
             with: sensorCapturer.start()
-        ).subscribe(messagesSubject)
+        ).subscribe(_events)
 
         self.isRunning = true
     }
@@ -179,8 +190,8 @@ public class MeasurementImpl {
 
 @available(iOS 14, macOS 10.15, *)
 extension MeasurementImpl: Measurement {
-    public var measurementMessages: AnyPublisher<Message, Never> {
-        return messagesSubject.eraseToAnyPublisher()
+    public var events: AnyPublisher<Message, Never> {
+        return _events.eraseToAnyPublisher()
     }
 
     /**
@@ -203,7 +214,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
             }
 
             try startCapturing()
-            messagesSubject.send(.started(timestamp: Date()))
+            _events.send(.started(timestamp: Date()))
         }
     }
 
@@ -216,10 +227,10 @@ Starting data capturing on paused service. Finishing paused measurements and sta
         try lifecycleQueue.sync {
 
             guard isPaused || isRunning else {
-                if !isPaused {
-                    throw MeasurementError.notPaused
-                } else {
+                if !isRunning {
                     throw MeasurementError.notRunning
+                } else {
+                    throw MeasurementError.notPaused
                 }
             }
 
@@ -227,8 +238,8 @@ Starting data capturing on paused service. Finishing paused measurements and sta
             stopCapturing()
             isPaused = false
 
-            messagesSubject.send(.stopped(timestamp: Date()))
-            messagesSubject.send(completion: .finished)
+            _events.send(.stopped(timestamp: Date()))
+            _events.send(completion: .finished)
         }
     }
 
@@ -251,7 +262,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
             stopCapturing()
             isPaused = true
 
-            messagesSubject.send(.paused(timestamp: Date()))
+            _events.send(.paused(timestamp: Date()))
         }
     }
 
@@ -276,7 +287,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
             isPaused = false
             isRunning = true
 
-            messagesSubject.send(.resumed(timestamp: Date()))
+            _events.send(.resumed(timestamp: Date()))
         }
     }
 
@@ -288,7 +299,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
      */
     public func changeModality(to modality: String) {
         lifecycleQueue.sync {
-            messagesSubject.send(.modalityChanged(to: modality))
+            _events.send(.modalityChanged(to: modality))
         }
     }
 }
