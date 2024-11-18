@@ -16,33 +16,35 @@
  * You should have received a copy of the GNU General Public License
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
- // TODO: Is this layer really necessary. Seems like this either belongs into the measurement or into LocationManager.
 
 import Foundation
 import CoreLocation
 import os.log
 import Combine
 
+/**
+ A protocol for the lifecycle of capturing geographic locations.
+
+ This protocol mainly exists to mock the capturing process during testing.
+ */
 @available(iOS 14, macOS 10.15, *)
 public protocol LocationCapturer {
  func start() -> AnyPublisher<Message, Never>
  func stop()
 }
 
-// TODO: Transform into a Combine Publisher: https://dev.to/leogdion/combine-corelocation-part-1-publishers-delegates-164o
 /**
  A class controlling the lifecycle of a *CoreLocation* session.
 
  This is used to start and stop location capturing and to inform intereseted parties about location changes.
 
  - Author: Klemens Muthmann
- - Version: 2.0.0
- - Since: 12.0.0
  */
-/*class LocationCapturer: NSObject {
+class SmartphoneLocationCapturer: NSObject, LocationCapturer {
+    // MARK: Properties
     /// This is the maximum time between two location updates allowed before the service assumes that it does not have a valid location fix anymore.
     private static let maxAllowedTimeBetweenLocationUpdates = TimeInterval(2.0)
-    //private let filter: TrackCleaner
+    /// Used the check whether updates are frequent enough to send the `hasFix` signal.
     private var prevLocationUpdateTime: Date?
     /// The lifecycle queue of the running `Measurement`. Using the lifecycle queue prevents pause and stop events from finishing if there are still locations to be processed.
     private let lifecycleQueue: DispatchQueue
@@ -63,7 +65,19 @@ public protocol LocationCapturer {
             - lifecycleQueue: The lifecycle queue of the running `Measurement`. Using the lifecycle queue prevents pause and stop events from finishing if there are still locations to be processed.
             - locationManagerFactory: Factory class for creating a `LocationManager`. This factory is mainly used to inject different location manager implementations into an object of this class.
      */
-    init(lifecycleQueue: DispatchQueue, locationManagerFactory: () -> LocationManager) {
+    init(
+        lifecycleQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated),
+        locationManagerFactory: () -> LocationManager = {
+            let manager = CLLocationManager()
+            manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+            manager.allowsBackgroundLocationUpdates = true
+            manager.pausesLocationUpdatesAutomatically = false
+            manager.activityType = .other
+            manager.showsBackgroundLocationIndicator = true
+            manager.distanceFilter = kCLDistanceFilterNone
+            return manager
+        }
+    ) {
         self.lifecycleQueue = lifecycleQueue
         self.messagePublisher = PassthroughSubject<Message, Never>()
 
@@ -103,7 +117,7 @@ public protocol LocationCapturer {
                 return .notOnTime
             }
 
-            let updateTimeIsLow = prevLocationUpdateTime.timeIntervalSinceNow < LocationCapturer.maxAllowedTimeBetweenLocationUpdates
+            let updateTimeIsLow = prevLocationUpdateTime.timeIntervalSinceNow < SmartphoneLocationCapturer.maxAllowedTimeBetweenLocationUpdates
             if updateTimeIsLow && !hasFix {
                 messagePublisher.send(Message.hasFix)
                 hasFix = true
@@ -119,7 +133,7 @@ public protocol LocationCapturer {
 }
 
 // MARK: - CLLocationManagerDelegate
-extension LocationCapturer: CLLocationManagerDelegate {
+extension SmartphoneLocationCapturer: CLLocationManagerDelegate {
     /**
      The listener method that is informed about new geo locations.
 
@@ -156,11 +170,12 @@ extension LocationCapturer: CLLocationManagerDelegate {
      - manager: The location manager reporting the error.
      - didFailWithError: The reported error.
      */
-    public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    @objc public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         os_log("Location service failed with error: %{public}@!", log: OSLog.capturing, type: .error, error.localizedDescription)
         messagePublisher.send(Message.fixLost)
     }
 
+    @objc(locationManager:didChangeAuthorizationStatus:)
     public func locationManager(_: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         guard self.coreLocationManager.locationDelegate != nil else {
             return
@@ -179,10 +194,8 @@ extension LocationCapturer: CLLocationManagerDelegate {
  An enumeration for reporting whether some location update is either `onTime` or is `notOnTime`.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 12.0.0
  */
 enum LocationTiming {
     case onTime
     case notOnTime
-}*/
+}

@@ -42,8 +42,6 @@ This protocol defines a measurements data together with its lifecycle during dat
  Please have a look at the documentation of that interface to get further infromation about how to synchronize captured data with the cloud.
 
  - Author: Klemens Muthmann
- - Version: 2.0.0
- - Since: 12.0.0
  */
 @available(iOS 14, macOS 10.15, *)
 public protocol Measurement {
@@ -75,8 +73,6 @@ public protocol Measurement {
  An object of this class handles the lifecycle of starting and stopping data capturing.
 
  - Author: Klemens Muthmann
- - Version: 10.2.0
- - Since: 1.0.0
  */
 @available(iOS 14, macOS 10.15, *)
 public class MeasurementImpl {
@@ -88,9 +84,6 @@ public class MeasurementImpl {
     /// `true` if data capturing was running but is currently paused; `false` otherwise.
     public var isPaused: Bool
 
-    /// The background queue used to capture data.
-    private let capturingQueue: DispatchQueue
-
     /// An object that handles capturing of values from the smartphones sensors excluding geo locations (GPS, GLONASS, GALILEO, etc.).
     private let sensorCapturer: SensorCapturer
 
@@ -100,11 +93,13 @@ public class MeasurementImpl {
 
     /**
      A queue used to synchronize calls to the lifecycle methods `start`, `pause`, `resume` and `stop`.
-     Using such a queue prevents successiv calls to these methods to interrupt each other.
+     Using such a queue prevents successiv calls to these methods that interrupt each other.
      */
     private let lifecycleQueue: DispatchQueue
+    /**
+     A cancellable created by the subscription to new sensor value messages received from the ``LocationCapturer`` as well as the ``SensorCapturer``.
+     */
     private var messageCancellable: AnyCancellable? = nil
-    private var finishedEventCancellable: AnyCancellable? = nil
 
     // MARK: - Initializers
 
@@ -116,25 +111,10 @@ public class MeasurementImpl {
         - locationManagerFactory: A factory creating a *CoreLocation* `LocationManager` on demand. This can also be used to inject a mock implementation.
      */
     public init(
-        capturingQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated),
-        /*locationManagerFactory: (() -> LocationManager) = {
-            let manager = CLLocationManager()
-            manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-            manager.allowsBackgroundLocationUpdates = true
-            manager.pausesLocationUpdatesAutomatically = false
-            manager.activityType = .other
-            manager.showsBackgroundLocationIndicator = true
-            manager.distanceFilter = kCLDistanceFilterNone
-            return manager
-        },*/
         sensorCapturer: SensorCapturer,
         locationCapturer: LocationCapturer
     ) {
-        self.capturingQueue = capturingQueue
         self.lifecycleQueue = DispatchQueue(label: "lifecycle")
-        // TODO: Move the following to standard parameters
-        //self.sensorCapturer = SensorCapturer(capturingQueue: capturingQueue)
-        //self.locationCapturer = LocationCapturer(lifecycleQueue: lifecycleQueue, locationManagerFactory: locationManagerFactory)
         self.sensorCapturer = sensorCapturer
         self.locationCapturer = locationCapturer
         self._events = PassthroughSubject<Message, Never>()
@@ -240,6 +220,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
 
             _events.send(.stopped(timestamp: Date()))
             _events.send(completion: .finished)
+            messageCancellable?.cancel()
         }
     }
 
