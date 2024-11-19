@@ -22,6 +22,11 @@ import CoreMotion
 import Combine
 import os.log
 
+/**
+ Protocol for constantly capturing sensor values.
+
+ Newly captured values are send via the `Publisher` returned from the `start` method.
+ */
 @available(iOS 14, macOS 10.15, *)
 public protocol SensorCapturer {
     func start() -> AnyPublisher<Message, Never>
@@ -31,18 +36,14 @@ public protocol SensorCapturer {
 /**
  An instance of this class is responsible for capturing data from the motion sensors of the smartphone. Currently it supports capturing from accelerometer, gyroscope and magnetometer (compass) and altimeter.
 
- There should be only one instance of this class used within the application.
-
  Timestamps for each sensor value are generated based on the current system time (by calling `Date()`).
  This might cause a slight shift by a few nanoseconds or milliseconds from the actual time when the sensor has captured the event.
  However using the timestamp provided by the event is impossible, since that timestamp is based on kernel boot time, which is not updated when the system sleeps.
  Since there is no way of knowing how long the system has sleept in between the last boot and now, we cannot use kernel boot time to get absolute data.
 
  - Author: Klemens Muthmann
- - Version: 3.0.0
- - Since: 6.0.0
  */
-/*class SensorCapturer {
+class SmartphoneSensorCapturer: SensorCapturer {
 
     // MARK: - Properties
     /// The timestamp of the previously captured acceleration. This is stored to make sure all accelerations are captured in increasing order.
@@ -58,7 +59,7 @@ public protocol SensorCapturer {
     /// An instance of `CMMotionManager`. There should be only one instance of this type in your application.
     private let motionManager: CMMotionManager
     /// An altimeter to get altitude information.
-    private let altimeter = CMAltimeter()
+    private let altimeter: CMAltimeter
 
     // MARK: - Initializers
     /**
@@ -69,15 +70,20 @@ public protocol SensorCapturer {
         - accelerometerInterval: The number of updates the accelerometer provides per second (approximately). The maximum on iOS is usually 100.
         - gyroInterval: The number of updates the gyroscope provides per second (approximately). The maximum on iOS is usually 100.
         - directionsInterval: The number of updates the magnetometer provides per second (approximately). The maximum on iOS is usually 100.
+        - motionManager: Manager used to caputre CoreMotion events. This parameter may be used to mock the actual calls to physical sensors, if none are available, for example during testing.
+        - altimeter: Used to capture height data if no actual sensor is available. That way it is possible to mock this sensor during testing.
      */
     init(
-        capturingQueue: DispatchQueue,
+        capturingQueue: DispatchQueue = DispatchQueue.global(qos: .default),
         accelerometerInterval: Double = 100.0,
         gyroInterval: Double = 100.0,
-        directionsInterval: Double = 100.0
+        directionsInterval: Double = 100.0,
+        motionManager: CMMotionManager = CMMotionManager(),
+        altimeter: CMAltimeter = CMAltimeter()
     ) {
         self.capturingQueue = capturingQueue
-        self.motionManager = CMMotionManager()
+        self.motionManager = motionManager
+        self.altimeter = altimeter
         self.motionManager.accelerometerUpdateInterval = 1.0 / accelerometerInterval
         self.motionManager.gyroUpdateInterval = 1.0 / gyroInterval
         self.motionManager.magnetometerUpdateInterval = 1.0 / directionsInterval
@@ -129,8 +135,8 @@ public protocol SensorCapturer {
      See `CMAccelerometerHandler` in the Apple documentation for futher information.
 
      - Parameters:
-     - data: The new accelerometer data, if any is available or `nil` otherwise.
-     - error: An error or `nil` if no error occured.
+        - data: The new accelerometer data, if any is available or `nil` otherwise.
+        - error: An error or `nil` if no error occured.
      */
     private func handle(_ data: CMAccelerometerData?, _ error: Error?) {
         if let error = error {
@@ -167,8 +173,8 @@ public protocol SensorCapturer {
      See `CMGyroHandler` in the Apple documentation for futher information.
 
      - Parameters:
-     - data: The new rotations data, if any is available or `nil` otherwise.
-     - error: An error or `nil` if no error occured.
+        - data: The new rotations data, if any is available or `nil` otherwise.
+        - error: An error or `nil` if no error occured.
      */
     private func handle(_ data: CMGyroData?, _ error: Error?) {
         if let error = error {
@@ -203,8 +209,8 @@ public protocol SensorCapturer {
      See `CMDeviceMotionHandler` in the Apple documentation for futher information.
 
      - Parameters:
-     - data: The new directional data, if any is available or `nil` otherwise.
-     - error: An error or `nil` if no error occured.
+        - data: The new directional data, if any is available or `nil` otherwise.
+        - error: An error or `nil` if no error occured.
      */
     private func handle(_ data: CMDeviceMotion?, _ error: Error?) {
         if let error = error {
@@ -274,4 +280,4 @@ extension CMLogItem {
     func startTime() -> Date {
         return CMLogItem.bootTime.addingTimeInterval(self.timestamp)
     }
-}*/
+}
