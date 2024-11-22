@@ -26,11 +26,10 @@ import Combine
  This test is intended to test capturing some data in isolation.
 
  - Author: Klemens Muthmann
- - Version: 2.4.1
- - Since: 1.0.0
  */
 struct MeasurementTests {
 
+    /// `MeasurementImpl` used for testing.
     let measurement = MeasurementImpl(sensorCapturer: MockSensorCapturer(), locationCapturer: MockLocationCapturer())
 
     @Test("Checks correct workings of a simple start/stop lifecycle.")
@@ -188,19 +187,6 @@ struct MeasurementTests {
         #expect(!measurement.isRunning)
     }
 
-    // TODO: These three should probably be in another struct
-    @Test("Tests whether using a reduced update interval for location update events, works as expected.")
-    func withLowerUpdateInterval_HappyPath() throws {
-    }
-
-    @Test("After the App has been paused very long iOS will kill it. This deletes the paused state in memory. This test checks that recreating this state from the database is successful.")
-    func resumeAfterLongPause_ShouldNotThrowAnException() throws {
-    }
-
-    @Test("In case there already is a paused measurement after App restart, starting should still be successful and just output a warning.")
-    func startPausedService_FinishesPausedMeasurementAndThrowsNoException() throws {
-    }
-
     @Test("Tests that starting a new measurement and changing the modality during runtime, creates two change events.")
     func changeModality_EventLogContainsTwoModalities() async throws {
         var messageLog = [String]()
@@ -277,28 +263,22 @@ struct MeasurementTests {
     }
 }
 
+/// A mocked version of a `SensorCapturer` that actually does nothing.
 struct MockSensorCapturer: SensorCapturer {
     let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
     func start() -> AnyPublisher<DataCapturing.Message, Never> {
-        //messageBus.send(Message.started(timestamp: Date()))
         return messageBus.eraseToAnyPublisher()
     }
     
-    func stop() {
-        //messageBus.send(Message.stopped(timestamp: Date()))
-    }
+    func stop() { }
 }
 
+/// A mocked version of a `MockLocationCapturer` that actually does nothing.
 struct MockLocationCapturer: LocationCapturer {
     let messageBus = PassthroughSubject<DataCapturing.Message, Never>()
     func start() -> AnyPublisher<DataCapturing.Message, Never> {
-        //messageBus.send(Message.started(timestamp: Date()))
         return messageBus.eraseToAnyPublisher()
     }
     
-    func stop() {
-        //messageBus.send(Message.stopped(timestamp: Date()))
-    }
-    
-
+    func stop() { }
 }

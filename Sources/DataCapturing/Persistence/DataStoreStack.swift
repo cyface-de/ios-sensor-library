@@ -24,8 +24,6 @@ import OSLog
  Protocol for objects talking to a data storage.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 12.0.0
  */
 @available(iOS 14, macOS 10.15, *)
 public protocol DataStoreStack {
@@ -58,22 +56,23 @@ public protocol DataStoreStack {
  So it might be a good idea to run `setup(bundle:completionClosure:)` on a background thread.
 
  - Author: Klemens Muthmann
- - Version: 4.0.0
- - Since: 4.0.0
  - Attention: You must call `setup(bundle:completionClosure:)` only once in your application. Usually this should happen in AddDelegate.application. Do not load or save any data before the call to `setup(bundle:completionClosure:)` has finished.
  */
 @available(iOS 14, macOS 10.15, *)
 public class CoreDataStack: DataStoreStack {
+    // MARK: - Properties
     /// An object to migrate between different Cyface model versions.
     let migrator: CoreDataMigratorProtocol
     /// The type of the store to use. In production this should usually be `NSSQLiteStoreType`. In a test environment you might use `NSInMemoryStoreType`. Both values are defined by *CoreData*.
     private let storeType: String
+    /// The `Bundle` of the application containing the `NSManagedObjectModel`.
     private let bundle: Bundle
     /// The identifier that has been assigned the last to a new `Measurement`.
     private var lastIdentifier: UInt64?
-
     /// The `NSPersistentContainer` used by this *CoreData* stack.
     var persistentContainer: NSPersistentContainer
+    /// A flag set after `setup` has been called to appropriately report an error if that method was not called, prior to calling any other method on this object.
+    private var setupFinished = false
 
     /// Provides a background context usable on a background thread and accessing the data store managed by this stack.
     lazy var backgroundContext: NSManagedObjectContext = {
@@ -138,10 +137,13 @@ public class CoreDataStack: DataStoreStack {
         try migrateStoreIfNeeded(bundle: self.bundle)
         typealias LoadPersistentStoreContinuation = CheckedContinuation<NSPersistentStoreDescription, Error>
         _ = try await withCheckedThrowingContinuation { (loadPersistentStoreContinuation: LoadPersistentStoreContinuation) in
-            persistentContainer.loadPersistentStores { result, error in
+            persistentContainer.loadPersistentStores { [weak self] result, error in
                 if let error = error {
                     loadPersistentStoreContinuation.resume(throwing: error)
                 } else {
+                    if let self = self {
+                        setupFinished = true
+                    }
                     loadPersistentStoreContinuation.resume(returning: result)
                 }
             }
@@ -212,6 +214,10 @@ public class CoreDataStack: DataStoreStack {
      - Throws: Any error thrown by the block is rethrown here.
      */
     public func wrapInContext(_ block: (NSManagedObjectContext) throws -> Void) throws {
+        guard setupFinished else {
+            throw CoreDataError.notSetup
+        }
+
         var outerError: Error?
 
         backgroundContext.performAndWait {
@@ -233,6 +239,9 @@ public class CoreDataStack: DataStoreStack {
      - Throws: Any error thrown by the block is rethrown here.
      */
     public func wrapInContextReturn<T>(_ block: (NSManagedObjectContext) throws -> T) throws -> T {
+        guard setupFinished else {
+            throw CoreDataError.notSetup
+        }
         var outerError: Error?
         var ret: T?
 
@@ -253,6 +262,7 @@ public class CoreDataStack: DataStoreStack {
         }
     }
 
+    /// Generate a valid identifier based on the ones already generated.
     public func nextValidIdentifier() throws -> UInt64 {
         var fetchedMeasurements = [MeasurementMO]()
         var identifier = UInt64(0)
@@ -270,8 +280,6 @@ public class CoreDataStack: DataStoreStack {
         A collection of all the errors thrown by the `CoreDataManager`.
 
      - Author: Klemens Muthmann
-     - Since: 10.0.0
-     - Version: 1.0.0
      */
     enum CoreDataError: Error {
         /// If the URL to the CoreData model file can not be processed by the system. This should usually not happen, since it does not depend on user input. If you encounter this error you probably have an invalid build of the Cyface SDK.
@@ -280,5 +288,7 @@ public class CoreDataStack: DataStoreStack {
         case missingModelUrl
         /// If the file containing the Cyface CoreData data model is not available. If you encounter this error, you probably have an invalid build of the Cyface SDK. The file should be under DataCapturing/Source/Model/CyfaceModel.xcdatamodeld.
         case modelNotAvailable(URL)
+        /// This is thrown if the stack was not setup correctly by calling `CoreDataStack.setup` prior to the first call.
+        case notSetup
     }
 }
