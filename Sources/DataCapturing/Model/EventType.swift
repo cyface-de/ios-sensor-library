@@ -22,8 +22,6 @@ import Foundation
  Provides a listing of all the events, that might occur during a data capturing run. These events are saved with a timestamp of their occurrence, to reconstruct them for later use.
 
  - Author: Klemens Muthmann
- - Version: 1.1.0
- - Since: 4.6.1
  */
 public enum EventType: Int16 {
     /// An event logged after the service has successfully started

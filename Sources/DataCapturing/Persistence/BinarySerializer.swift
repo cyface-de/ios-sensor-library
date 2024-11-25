@@ -88,8 +88,6 @@ extension BinarySerializer {
  A serializer for measurements into the Cyface binary format represenation.
 
  - Author: Klemens Muthmann
- - Since: 2.0.0
- - Version: 4.0.0
  */
 class MeasurementSerializer: BinarySerializer {
     /// The number of centimeters in a meter.
@@ -220,8 +218,6 @@ class MeasurementSerializer: BinarySerializer {
  A serializer for accelerations into the Cyface binary format representation
 
  - Author: Klemens Muthmann
- - Since: 2.0.0
- - Version: 3.0.0
  - Note: This class was called `AccelerationSerializer` in SDK version prior to 6.0.0.
  */
 public class SensorValueSerializer: BinarySerializer {

@@ -23,8 +23,6 @@ import CoreData
  Convert the old `Int64` timestamp to a `Date` for each `Measurement`.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 12.0.0
  */
 class V10MeasurementToMeasurementPolicy: NSEntityMigrationPolicy {
     override func createDestinationInstances(forSource sInstance: NSManagedObject, in mapping: NSEntityMapping, manager: NSMigrationManager) throws {

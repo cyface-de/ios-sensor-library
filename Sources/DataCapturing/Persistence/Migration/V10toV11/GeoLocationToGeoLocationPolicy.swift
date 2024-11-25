@@ -23,8 +23,6 @@ import CoreData
  Convert the old `Int64` timestamp to a `Date` for each `GeoLocation`.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 12.0.0
  */
 class GeoLocationToGeoLocationPolicy: NSEntityMigrationPolicy {
     override func createDestinationInstances(forSource sInstance: NSManagedObject, in mapping: NSEntityMapping, manager: NSMigrationManager) throws {

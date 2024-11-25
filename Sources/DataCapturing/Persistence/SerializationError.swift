@@ -23,8 +23,6 @@ import Foundation
  An enumeration of all the possible errors thrown during serialization.
 
  - Author: Klemens Muthmann
- - Version: 2.0.0
- - Since: 1.0.0
  */
 public enum SerializationError: Error {
     /// Thrown if compression of serialized data was not successful. The failed data is provided as parameter.

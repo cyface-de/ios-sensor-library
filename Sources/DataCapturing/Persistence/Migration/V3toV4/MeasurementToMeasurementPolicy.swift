@@ -26,8 +26,6 @@ import CoreLocation
  It is used by a Mapping to carry out that conversion on devices installing an SDK requiring version 4 but having version 3.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 4.0.0
  */
 class MeasurementToMeasurementPolicy: NSEntityMigrationPolicy {
 

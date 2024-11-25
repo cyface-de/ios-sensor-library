@@ -28,8 +28,6 @@ import CoreLocation
  - SeeAlso: `DataCapturingService`, `PersistenceLayer.save(:[GeoLocation]:MeasurementEntity:(MeasurementMO?, Status) -> Void)`, `GeoLocationMO`
 
  - Author: Klemens Muthmann
- - Version: 3.0.0
- - Since: 1.0.0
  */
 public class GeoLocation: CustomStringConvertible {
 
