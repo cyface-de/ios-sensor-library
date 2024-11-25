@@ -25,4 +25,4 @@ jobs:
    #   run: swift test -q
       #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
     - name: Build & Test
-      run: swift test -Xswiftc "-sdk" -Xswiftc "`xcrun --sdk iphonesimulator --show-sdk-path`" -Xswiftc "-target" -Xswiftc "x86_64-apple-ios14.0-simulator"
+      run: xcodebuild clean test -scheme "DataCapturing" -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO
