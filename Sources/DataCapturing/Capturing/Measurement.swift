@@ -43,7 +43,7 @@ This protocol defines a measurements data together with its lifecycle during dat
 
  - Author: Klemens Muthmann
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public protocol Measurement {
     /// A combine subject used to receive messages during data capturing and forwarding them, to whoever wants to listen.
     var events: AnyPublisher<Message, Never> { get }
@@ -74,7 +74,7 @@ public protocol Measurement {
 
  - Author: Klemens Muthmann
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public class MeasurementImpl {
 
     // MARK: - Properties
@@ -168,7 +168,7 @@ public class MeasurementImpl {
 
 // MARK: - Measurement
 
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 extension MeasurementImpl: Measurement {
     public var events: AnyPublisher<Message, Never> {
         return _events.eraseToAnyPublisher()

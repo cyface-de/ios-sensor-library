@@ -27,7 +27,7 @@ import os.log
 
  Newly captured values are send via the `Publisher` returned from the `start` method.
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public protocol SensorCapturer {
     func start() -> AnyPublisher<Message, Never>
     func stop()

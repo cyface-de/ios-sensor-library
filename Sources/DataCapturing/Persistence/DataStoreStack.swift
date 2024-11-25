@@ -25,7 +25,7 @@ import OSLog
 
  - Author: Klemens Muthmann
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public protocol DataStoreStack {
     // TODO: The following two methods are not really an abstraction, as they provide an `NSManagedObjectContext`. This should be handled differently.
     /// All the code carried out inside the provided block can use the provided `NSManagedObjectContext` and be sure, that this context is valid at that time.
@@ -58,7 +58,7 @@ public protocol DataStoreStack {
  - Author: Klemens Muthmann
  - Attention: You must call `setup(bundle:completionClosure:)` only once in your application. Usually this should happen in AddDelegate.application. Do not load or save any data before the call to `setup(bundle:completionClosure:)` has finished.
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public class CoreDataStack: DataStoreStack {
     // MARK: - Properties
     /// An object to migrate between different Cyface model versions.

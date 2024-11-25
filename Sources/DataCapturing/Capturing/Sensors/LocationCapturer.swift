@@ -27,7 +27,7 @@ import Combine
 
  This protocol mainly exists to mock the capturing process during testing.
  */
-@available(iOS 14, macOS 10.15, *)
+@available(iOS 14, *)
 public protocol LocationCapturer {
  func start() -> AnyPublisher<Message, Never>
  func stop()

@@ -47,7 +47,7 @@ public protocol LocationManager {
 }
 
 // MARK: - Implementation of LocationManager
-@available(iOS 14, macOS 11, *)
+@available(iOS 14, *)
 extension CLLocationManager: LocationManager {
     /// A wrapper for the delegate used by *CoreLocation*.
     public var locationDelegate: CLLocationManagerDelegate? {
