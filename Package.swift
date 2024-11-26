@@ -21,6 +21,10 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.2"),
         // Library for handling OAuth Login Process
         .package(url: "https://github.com/openid/AppAuth-iOS.git", .upToNextMajor(from: "1.7.5")),
+
+        // Test Dependencies
+        // Mocker provides functionality to Mock Network communication allowing us to test the data transfer layer.
+        .package(url: "https://github.com/WeTransfer/Mocker.git", from: "2.5.5"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -42,7 +46,7 @@ let package = Package(
         ),
         .testTarget(
             name: "DataCapturingTests",
-            dependencies: ["DataCapturing"],
+            dependencies: ["DataCapturing", "Mocker"],
             //path: "Tests",
             exclude: ["Resources/README.md"],
             resources: [

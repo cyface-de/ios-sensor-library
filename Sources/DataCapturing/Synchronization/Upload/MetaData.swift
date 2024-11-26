@@ -44,8 +44,6 @@ var installationIdentifier: String {
  A measurement's meta data, required by the server to decide on whether to accept the upload or not.
 
  - author: Klemens Muthmann
- - version: 1.0.0
- - Since: 12.0.0
  */
 public struct MetaData: Encodable {
     /// The number of locations of the transmittable measurement.
@@ -78,6 +76,22 @@ public struct MetaData: Encodable {
     let deviceId = installationIdentifier
     /// The type of the device transmitting the data.
     let deviceType = modelIdentifier
+
+    public init(locationCount: UInt64, formatVersion: Int, startLocLat: Double?, startLocLon: Double?, startLocTS: Date?, endLocLat: Double?, endLocLon: Double?, endLocTS: Date?, measurementId: UInt64, osVersion: String, applicationVersion: String, length: Double, modality: String) {
+        self.locationCount = locationCount
+        self.formatVersion = formatVersion
+        self.startLocLat = startLocLat
+        self.startLocLon = startLocLon
+        self.startLocTS = startLocTS
+        self.endLocLat = endLocLat
+        self.endLocLon = endLocLon
+        self.endLocTS = endLocTS
+        self.measurementId = measurementId
+        self.osVersion = osVersion
+        self.applicationVersion = applicationVersion
+        self.length = length
+        self.modality = modality
+    }
 
     /// Add this meta data to an `URLRequest` formatted as an HTTP header.
     func add(to request: inout URLRequest) {
