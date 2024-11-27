@@ -73,7 +73,7 @@ class SessionRegistryTest: XCTestCase {
     func testPersistentRegistryHappyPath() async throws {
         // Arrange
         let uploadFactory = MockUploadFactory()
-        var oocut = PersistentSessionRegistry(dataStoreStack: coreDataStack, uploadFactory: uploadFactory)
+        let oocut = PersistentSessionRegistry(dataStoreStack: coreDataStack, uploadFactory: uploadFactory)
         let mockMeasurement = FinishedMeasurement(identifier: 0)
         try coreDataStack.wrapInContext { context in
             let measurement = MeasurementMO(context: context)
@@ -95,7 +95,7 @@ class SessionRegistryTest: XCTestCase {
     func testUpdateExistingSession() async throws {
         // Arrange
         let uploadFactory = MockUploadFactory()
-        var oocut = PersistentSessionRegistry(dataStoreStack: coreDataStack, uploadFactory: uploadFactory)
+        let oocut = PersistentSessionRegistry(dataStoreStack: coreDataStack, uploadFactory: uploadFactory)
         let mockMeasurement = FinishedMeasurement(identifier: 0)
         try coreDataStack.wrapInContext { context in
             let storedMeasurement = MeasurementMO(context: context)

@@ -22,7 +22,7 @@ import Foundation
 import AppAuth
 @testable import DataCapturing
 
-@Test("Test that saving the authentication state and reloading from disk works, as expected.")
+@Test("Test that saving the authentication state and reloading from disk works, as expected.", .tags(.authentication, .synchronization))
 func savingAuthStateHappyPath() async throws {
     let oocut = OAuthAuthenticator(
         issuer: URL(string: "http://localhost/")!,

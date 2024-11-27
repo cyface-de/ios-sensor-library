@@ -27,7 +27,11 @@ import CoreData
 
  - Author: Klemens Muthmann
  */
-@Suite(.disabled("Currently does not work iwthin CI, since Terminal execution loads resources from a different path, than XCode execution.")) struct PersistenceTests {
+@Suite(
+    .disabled("Currently does not work iwthin CI, since Terminal execution loads resources from a different path, than XCode execution."),
+    .tags(.persistence)
+)
+struct PersistenceTests {
 
     var moc: NSManagedObjectContext = {
         let persistentContainer = NSPersistentContainer(name: "CyfaceModel", managedObjectModel: PersistenceTests.managedObjectModel)

@@ -25,7 +25,7 @@ import OSLog
 /**
  Tests that loadin a custom mapping model works. This test is used as a show case for how to load a mapping model. The code is not actually used in the app.
  */
-@Test(.disabled("This currently does not work on the terminal and thus in CI."))
+@Test(.disabled("This currently does not work on the terminal and thus in CI."), .tags(.persistence))
 func testLoadMappingModel() throws {
     let oldResource = "3"
     let newResource = "4"
@@ -50,7 +50,7 @@ func testLoadMappingModel() throws {
  - Version: 1.3.0
  - Since: 4.0.0
  */
-@Suite(.serialized, .disabled("This currently does not work on the terminal and thus in CI."))
+@Suite(.serialized, .disabled("This currently does not work on the terminal and thus in CI."), .tags(.persistence))
 struct DataMigrationTest {
 
     var context: NSManagedObjectContext?
