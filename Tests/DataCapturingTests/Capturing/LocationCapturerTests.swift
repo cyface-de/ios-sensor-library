@@ -21,8 +21,8 @@ import Testing
 import Foundation
 import Combine
 
-/// Test that location capturer triggers the correct messages.
-@Test func locationCapturerHappyPath() async throws {
+@Test("Test that location capturer triggers the correct messages.", .tags(.capturing))
+func locationCapturerHappyPath() async throws {
     // Arrange
     let oocut = SmartphoneLocationCapturer(lifecycleQueue: DispatchQueue(label: "locationCapturer")) {
         return MockLocationManager()

@@ -21,7 +21,10 @@ import Testing
 import Combine
 @testable import DataCapturing
 
-@Test("Does a Measurement survive the App going to Background! After the App has been paused very long iOS will kill it. This deletes the paused state in memory. This test checks that recreating this state from the database is successful.")
+@Test(
+    "Does a Measurement survive the App going to Background! After the App has been paused very long iOS will kill it. This deletes the paused state in memory. This test checks that recreating this state from the database is successful.",
+    .tags(.capturing)
+)
 func measurementSurvivesBackground() async throws {
     let sensorCapturer = SmartphoneSensorCapturer(motionManager: MockSensorManager())
     let locationCapturer = SmartphoneLocationCapturer() {
@@ -48,7 +51,10 @@ func measurementSurvivesBackground() async throws {
     try measurementAfterPause.stop()
 }
 
-@Test("Tests whether using a reduced update interval for location update events, works as expected.")
+@Test(
+    "Tests whether using a reduced update interval for location update events, works as expected.",
+    .tags(.capturing)
+)
 func withLowerUpdateInterval_HappyPath() async throws {
     let sensorCapturer = SmartphoneSensorCapturer(accelerometerInterval: 1.0, gyroInterval: 1.0, directionsInterval: 1.0, motionManager: MockSensorManager())
     var messageLog = [String]()

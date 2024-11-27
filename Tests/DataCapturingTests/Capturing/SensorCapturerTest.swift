@@ -20,7 +20,10 @@ import Testing
 import Combine
 @testable import DataCapturing
 
-@Test("Tests that the SensorCapturer works as expected, at least for the happy path.")
+@Test(
+    "Tests that the SensorCapturer works as expected, at least for the happy path.",
+    .tags(.capturing)
+)
 func sensorCapturerHappyPath() async {
     // Arrange
     let oocut = SmartphoneSensorCapturer(motionManager: MockSensorManager())

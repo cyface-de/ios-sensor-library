@@ -27,6 +27,7 @@ import Combine
 
  - Author: Klemens Muthmann
  */
+@Suite(.tags(.capturing))
 struct MeasurementTests {
 
     /// `MeasurementImpl` used for testing.
