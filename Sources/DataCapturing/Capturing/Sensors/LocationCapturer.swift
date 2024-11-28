@@ -40,7 +40,7 @@ public protocol LocationCapturer {
 
  - Author: Klemens Muthmann
  */
-class SmartphoneLocationCapturer: NSObject, LocationCapturer {
+public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     // MARK: Properties
     /// This is the maximum time between two location updates allowed before the service assumes that it does not have a valid location fix anymore.
     private static let maxAllowedTimeBetweenLocationUpdates = TimeInterval(2.0)

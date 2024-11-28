@@ -43,7 +43,7 @@ public protocol SensorCapturer {
 
  - Author: Klemens Muthmann
  */
-class SmartphoneSensorCapturer: SensorCapturer {
+public class SmartphoneSensorCapturer: SensorCapturer {
 
     // MARK: - Properties
     /// The timestamp of the previously captured acceleration. This is stored to make sure all accelerations are captured in increasing order.
