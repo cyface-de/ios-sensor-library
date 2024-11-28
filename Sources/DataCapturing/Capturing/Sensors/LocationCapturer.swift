@@ -65,7 +65,7 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
             - lifecycleQueue: The lifecycle queue of the running `Measurement`. Using the lifecycle queue prevents pause and stop events from finishing if there are still locations to be processed.
             - locationManagerFactory: Factory class for creating a `LocationManager`. This factory is mainly used to inject different location manager implementations into an object of this class.
      */
-    init(
+    public init(
         lifecycleQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated),
         locationManagerFactory: () -> LocationManager = {
             let manager = CLLocationManager()
@@ -87,7 +87,7 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     }
 
     /// Start capturing locations and provide a `Publisher` for receiving updates.
-    func start() -> AnyPublisher<Message, Never> {
+    public func start() -> AnyPublisher<Message, Never> {
         coreLocationManager.locationDelegate = self
         if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
             self.coreLocationManager.startUpdatingLocation()
@@ -99,7 +99,7 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     }
 
     /// Stop capturing locations and free all resources.
-    func stop() {
+    public func stop() {
         self.coreLocationManager.stopUpdatingLocation()
         coreLocationManager.locationDelegate = nil
     }

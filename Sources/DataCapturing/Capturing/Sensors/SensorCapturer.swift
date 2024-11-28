@@ -73,7 +73,7 @@ public class SmartphoneSensorCapturer: SensorCapturer {
         - motionManager: Manager used to caputre CoreMotion events. This parameter may be used to mock the actual calls to physical sensors, if none are available, for example during testing.
         - altimeter: Used to capture height data if no actual sensor is available. That way it is possible to mock this sensor during testing.
      */
-    init(
+    public init(
         capturingQueue: DispatchQueue = DispatchQueue.global(qos: .default),
         accelerometerInterval: Double = 100.0,
         gyroInterval: Double = 100.0,
@@ -97,7 +97,7 @@ public class SmartphoneSensorCapturer: SensorCapturer {
 
     // MARK: - Methods
     /// The the sensor capturing to the storage instances `accelertions`, `rotations`, `directions` and `altitudes`.
-    func start() -> AnyPublisher<Message, Never> {
+    public func start() -> AnyPublisher<Message, Never> {
         let queue = OperationQueue()
         queue.qualityOfService = QualityOfService.userInitiated
         queue.underlyingQueue = capturingQueue
@@ -122,7 +122,7 @@ public class SmartphoneSensorCapturer: SensorCapturer {
     }
 
     /// Stop sensor capturing.
-    func stop() {
+    public func stop() {
         motionManager.stopAccelerometerUpdates()
         motionManager.stopGyroUpdates()
         motionManager.stopDeviceMotionUpdates()
