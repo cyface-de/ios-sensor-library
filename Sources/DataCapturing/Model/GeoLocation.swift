@@ -58,7 +58,7 @@ public class GeoLocation: CustomStringConvertible {
      - Parameters
         - managedObject: The CoreData managed object to populate this object from.
      */
-    convenience init(managedObject: GeoLocationMO) {
+    public convenience init(managedObject: GeoLocationMO) {
         self.init(
             latitude: managedObject.lat,
             longitude: managedObject.lon,

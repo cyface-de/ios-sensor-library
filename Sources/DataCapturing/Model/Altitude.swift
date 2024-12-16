@@ -24,8 +24,6 @@ import CoreData
  A struct to wrap all the information associated with a measured altitude provided by an altimeter.
 
  - Author: Klemens Muthmann
- - version: 1.0.0
- - Since: 12.0.0
  */
 public class Altitude: CustomStringConvertible {
     /// The relative altitude change since the last measured value, in meters.
@@ -39,11 +37,11 @@ public class Altitude: CustomStringConvertible {
         return "Altitude (relativeAltitude: \(relativeAltitude), pressure: \(pressure), timestamp: \(time.debugDescription))"
     }
 
-    convenience init(managedObject: AltitudeMO) {
+    public convenience init(managedObject: AltitudeMO) {
         self.init(relativeAltitude: managedObject.altitude, time: managedObject.time!)
     }
 
-    init(relativeAltitude: Double, pressure: Double = 0.0, time: Date) {
+    public init(relativeAltitude: Double, pressure: Double = 0.0, time: Date) {
         self.relativeAltitude = relativeAltitude
         self.pressure = pressure
         self.time = time
