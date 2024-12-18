@@ -83,8 +83,8 @@ public struct DefaultSensorValueFileFactory: SensorValueFileFactory {
     /// - Parameter fileType: The type of ``SensorValue`` to store.
     public func create(fileType: SensorValueFileType, qualifier: String) throws -> SensorValueFile {
         return try SensorValueFile(
-            rootPath: rootPath(),
-            fileType: SensorValueFileType.accelerationValueType,
+            rootPath: rootPath,
+            fileType: fileType,
             qualifier: qualifier
         )
     }
