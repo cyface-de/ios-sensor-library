@@ -38,22 +38,19 @@ public protocol SensorValueFileFactory {
     func create(fileType: SensorValueFileType, qualifier: String) throws -> FileType
 }
 
-// MARK: - Implementation
-extension SensorValueFileFactory {
-    /// The root path used to store data via this app. This is in global scope, so it gets initialized at application start, since finding the location is a computation heavy operation.
-    func rootPath() throws -> URL {
-        let root = "Application Support"
-        let measurementDirectory = "measurements"
-        let fileManager = FileManager.default
-        let libraryDirectory = FileManager.SearchPathDirectory.libraryDirectory
-        let libraryDirectoryUrl = try fileManager.url(for: libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+/// The root path used to store data via this app. This is in global scope, so it gets initialized at application start, since finding the location is a computation heavy operation.
+func rootPath() throws -> URL {
+    let root = "Application Support"
+    let measurementDirectory = "measurements"
+    let fileManager = FileManager.default
+    let libraryDirectory = FileManager.SearchPathDirectory.libraryDirectory
+    let libraryDirectoryUrl = try fileManager.url(for: libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
 
-        let measurementUrl = libraryDirectoryUrl
-            .appendingPathComponent(root)
-            .appendingPathComponent(measurementDirectory)
-        try fileManager.createDirectory(at: measurementUrl, withIntermediateDirectories: true)
-        return measurementUrl
-    }
+    let measurementUrl = libraryDirectoryUrl
+        .appendingPathComponent(root)
+        .appendingPathComponent(measurementDirectory)
+    try fileManager.createDirectory(at: measurementUrl, withIntermediateDirectories: true)
+    return measurementUrl
 }
 
 /**
@@ -71,10 +68,13 @@ public struct DefaultSensorValueFileFactory: SensorValueFileFactory {
     /// This factory creates ``SensorValueFile``.
     public typealias FileType = SensorValueFile
 
+    // MARK: - Properties
+    let rootPath: URL
+
     // MARK: - Initializers
     /// Create a new instance of this struct.
-    public init() {
-        // Nothing to do here.
+    public init() throws {
+        rootPath = try DataCapturing.rootPath()
     }
 
     /// Create a new ``SensorValueFile``.

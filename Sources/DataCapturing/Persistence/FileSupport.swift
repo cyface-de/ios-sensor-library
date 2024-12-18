@@ -54,6 +54,11 @@ public protocol FileSupport {
      Removes the file for the provided `FinishedMeasurement` instance.
      */
     func delete() throws
+
+    /**
+     Provide the data from the `File`
+     */
+    func data() throws -> Data
 }
 
 // MARK: - Implementation
@@ -194,7 +199,7 @@ public struct SensorValueFile: FileSupport {
         - `FileSupportError.notReadable` If the data file was not readable.
         - Some unspecified undocumented file system error if file was not accessible.
     */
-    func data() throws -> Data {
+    public func data() throws -> Data {
         do {
             let fileHandle = try FileHandle(forReadingFrom: qualifiedPath)
             defer {fileHandle.closeFile()}

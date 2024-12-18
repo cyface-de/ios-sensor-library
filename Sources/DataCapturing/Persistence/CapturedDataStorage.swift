@@ -79,7 +79,7 @@ public class CapturedCoreDataStorage<SVFF: SensorValueFileFactory> where SVFF.Se
     public init(
         _ dataStoreStack: DataStoreStack,
         _ interval: TimeInterval,
-        _ sensorValueFileFactory: SVFF = DefaultSensorValueFileFactory()
+        _ sensorValueFileFactory: SVFF
     ) {
         self.dataStoreStack = dataStoreStack
         self.interval = interval

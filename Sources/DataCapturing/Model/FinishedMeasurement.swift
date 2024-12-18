@@ -31,6 +31,7 @@ import OSLog
  - Author: Klemens Muthmann
  */
 public class FinishedMeasurement: Hashable, Equatable {
+    // MARK: - Properties
     /// A device wide unique identifier for this measurement. Usually set by incrementing a counter.
     public let identifier: UInt64
     /// A flag, marking this `Measurement` as either ready for data syncrhonization or not.
@@ -65,6 +66,7 @@ public class FinishedMeasurement: Hashable, Equatable {
     public let rotationData: Data
     public let directionData: Data
 
+    // MARK: - Initializers
     /**
      Initialize a new `Measurement` from an existing CoreData managed object.
 
@@ -74,7 +76,16 @@ public class FinishedMeasurement: Hashable, Equatable {
      - throws: `InconstantData.locationOrderViolation` if the timestamps of the locations in this measurement are not strongly monotonically increasing.
      */
     public convenience init(managedObject: MeasurementMO) throws {
-        let sensorValueFileFactory = DefaultSensorValueFileFactory()
+        let sensorValueFileFactory = try DefaultSensorValueFileFactory()
+        try self.init(managedObject: managedObject, sensorValueFileFactory: sensorValueFileFactory)
+    }
+
+    /**
+     Same as `init(:MeasurementMO)` but with the ability to inject a `sensorValueFileFactory`.
+     Since the creation of such a factory is computationally expensive it might be necessary to inject a centrally created one.
+     */
+    public convenience init(managedObject: MeasurementMO, sensorValueFileFactory: any SensorValueFileFactory) throws {
+        let sensorValueFileFactory = sensorValueFileFactory
         let accelerationFile = try sensorValueFileFactory.create(
             fileType: .accelerationValueType,
             qualifier: String(managedObject.unsignedIdentifier)
@@ -112,7 +123,6 @@ public class FinishedMeasurement: Hashable, Equatable {
                 tracks.append(track)
             }
         }
-
     }
 
     /**
@@ -153,6 +163,7 @@ public class FinishedMeasurement: Hashable, Equatable {
         self.directionData = directionData
     }
 
+    // MARK: - Methods
     /// Required by the `Hashable` protocol to produce a hash for this object.
     public func hash(into hasher: inout Hasher) {
         hasher.combine(identifier)

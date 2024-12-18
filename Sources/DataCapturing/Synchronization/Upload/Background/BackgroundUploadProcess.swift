@@ -307,7 +307,7 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
                 guard let storedMeasurement = try request.execute().first else {
                     throw PersistenceError.measurementNotLoadable(measurementIdentifier)
                 }
-                return try FinishedMeasurement(managedObject: storedMeasurement)
+                return try FinishedMeasurement(managedObject: storedMeasurement, sensorValueFileFactory: sensorValueFileFactory)
             }
 
             // Loading the Upload from the session three times is no accident. This is necessary due to multi threading constraints. Do not try to refactor this.
