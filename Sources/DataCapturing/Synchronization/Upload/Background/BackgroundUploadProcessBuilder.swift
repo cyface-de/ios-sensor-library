@@ -26,6 +26,11 @@ import UIKit
  - Author: Klemens Muthmann
  */
 public protocol BackgroundURLSessionEventDelegate {
+    /// Central place to store the bakcground session completion handler.
+    ///
+    /// For additional information please refer to the [Apple documentation](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background).
+    var completionHandler: (() -> Void)? { get set }
+
     func received(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void)
 }
 
@@ -46,11 +51,8 @@ public class BackgroundUploadProcessBuilder {
     let dataStoreStack: DataStoreStack
     /// Used by the created ``UploadProcess`` to authenticate and authorize uploads with the Cyface data collector.
     let authenticator: Authenticator
-    // TODO: Maybe put this into its own class. Has nothing really to do with building.
-    /// Central place to store the bakcground session completion handler.
-    ///
-    /// For additional information please refer to the [Apple documentation](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background).
-    var completionHandler: (() -> Void)?
+    let sensorValueFileFactory: any SensorValueFileFactory
+    let backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
 
     // MARK: - Initializers
     public init(
@@ -58,13 +60,17 @@ public class BackgroundUploadProcessBuilder {
         collectorUrl: URL,
         uploadFactory: UploadFactory,
         dataStoreStack: DataStoreStack,
-        authenticator: Authenticator
+        authenticator: Authenticator,
+        sensorValueFileFactory: any SensorValueFileFactory,
+        backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
     ) {
         self.sessionRegistry = sessionRegistry
         self.collectorUrl = collectorUrl
         self.uploadFactory = uploadFactory
         self.dataStoreStack = dataStoreStack
         self.authenticator = authenticator
+        self.sensorValueFileFactory = sensorValueFileFactory
+        self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
     }
 }
 
@@ -76,13 +82,9 @@ extension BackgroundUploadProcessBuilder: UploadProcessBuilder {
             collectorUrl: collectorUrl,
             uploadFactory: uploadFactory,
             dataStoreStack: dataStoreStack,
-            authenticator: authenticator
+            authenticator: authenticator,
+            sensorValueFileFactory: sensorValueFileFactory,
+            backgroundUrlSessionEventDelegate: backgroundUrlSessionEventDelegate
         )
-    }
-}
-
-extension BackgroundUploadProcessBuilder: BackgroundURLSessionEventDelegate {
-    public func received(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        self.completionHandler = completionHandler
     }
 }

@@ -59,6 +59,8 @@ class BackgroundUploadProcess: NSObject {
     let authenticator: Authenticator
     /// A *Combine* publisher to send information about the status of all the uploads.
     let uploadStatus = PassthroughSubject<UploadStatus, Never>()
+    let sensorValueFileFactory: any SensorValueFileFactory
+    var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
 
     // MARK: - Initializers
     /// Create a new complete instance of this class.
@@ -68,7 +70,9 @@ class BackgroundUploadProcess: NSObject {
         collectorUrl: URL,
         uploadFactory: UploadFactory,
         dataStoreStack: DataStoreStack,
-        authenticator: Authenticator
+        authenticator: Authenticator,
+        sensorValueFileFactory: any SensorValueFileFactory,
+        backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
     ) {
         self.builder = builder
         self.sessionRegistry = sessionRegistry
@@ -76,6 +80,8 @@ class BackgroundUploadProcess: NSObject {
         self.uploadFactory = uploadFactory
         self.dataStoreStack = dataStoreStack
         self.authenticator = authenticator
+        self.sensorValueFileFactory = sensorValueFileFactory
+        self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
     }
 
     // MARK: - Methods
@@ -350,11 +356,12 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
         }
     }
 
+    // TODO: Move this to a place where it actually gets called.
     @objc(URLSessionDidFinishEventsForBackgroundURLSession:) public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         os_log("Finished background session", log: OSLog.synchronization, type: .info)
         DispatchQueue.main.async { [weak self] in
-            if let completionHandler = self?.builder.completionHandler {
-                self?.builder.completionHandler = nil
+            if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
+                self?.backgroundUrlSessionEventDelegate.completionHandler = nil
                 completionHandler()
             }
         }
