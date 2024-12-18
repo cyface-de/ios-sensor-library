@@ -30,11 +30,12 @@ func measurementSurvivesBackground() async throws {
     let locationCapturer = SmartphoneLocationCapturer() {
         return MockLocationManager()
     }
+    let sensorValueFileFactory = try DefaultSensorValueFileFactory()
 
     let measurementBeforePause = MeasurementImpl(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer)
     let dataStoreStack = try CoreDataStack()
     try await dataStoreStack.setup()
-    let dataStorage = CapturedCoreDataStorage(dataStoreStack, 1.0)
+    let dataStorage = CapturedCoreDataStorage(dataStoreStack, 1.0, sensorValueFileFactory)
     _ = try dataStorage.subscribe(to: measurementBeforePause, "BICYCLE") { measurementIdentifier in
         print("Measurement \(measurementIdentifier) saved to Core Data")
     }
@@ -43,8 +44,9 @@ func measurementSurvivesBackground() async throws {
 
     try await Task.sleep(nanoseconds: 2_000_000_000)
 
-    let newDataStorage = CapturedCoreDataStorage(dataStoreStack, 1.0)
-    let measurementAfterPause = try #require(try newDataStorage.pausedMeasurement(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer) { measurementIdentifier in
+
+    let newDataStorage = CapturedCoreDataStorage(dataStoreStack, 1.0, sensorValueFileFactory)
+    let (measurementAfterPause,identifier) = try #require(try newDataStorage.pausedMeasurement(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer) { measurementIdentifier in
         print("Measurement \(measurementIdentifier) saved to Core Data")
     })
     try measurementAfterPause.resume()
