@@ -49,7 +49,7 @@ public protocol CapturedDataStorage {
      You may provide clean up operations as part of `receiveCompletion`.
      That block is called after all the data is stored to the database.
      */
-    func pausedMeasurement(sensorCapturer: SensorCapturer, locationCapturer: LocationCapturer, _ receiveCompletion: @escaping ((_ databaseIdentifier: UInt64) async -> Void)) throws -> Measurement?
+    func pausedMeasurement(sensorCapturer: SensorCapturer, locationCapturer: LocationCapturer, _ receiveCompletion: @escaping ((_ databaseIdentifier: UInt64) async -> Void)) throws -> (Measurement, UInt64)?
 }
 
 /**
@@ -153,7 +153,7 @@ extension CapturedCoreDataStorage: CapturedDataStorage {
         sensorCapturer: any SensorCapturer,
         locationCapturer: any LocationCapturer,
         _ receiveCompletion: @escaping ((_ databaseIdentifier: UInt64) async -> Void)
-    ) throws -> (any Measurement)? {
+    ) throws -> (any Measurement, UInt64)? {
         return try dataStoreStack.wrapInContextReturn { context in
             let request = MeasurementMO.fetchRequest()
             request.predicate = NSPredicate(format: "synchronizable == false && synchronized == false")
@@ -163,7 +163,7 @@ extension CapturedCoreDataStorage: CapturedDataStorage {
                 let measurement = MeasurementImpl(sensorCapturer: sensorCapturer, locationCapturer: locationCapturer)
                 measurement.isPaused = true
                 try self._subscribe(to: measurement, serializedMeasurement.unsignedIdentifier, receiveCompletion)
-                return measurement
+                return (measurement, serializedMeasurement.unsignedIdentifier)
             } else {
                 return nil
             }
