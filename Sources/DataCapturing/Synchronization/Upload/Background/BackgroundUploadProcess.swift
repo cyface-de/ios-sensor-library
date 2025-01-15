@@ -329,7 +329,9 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
                 }
             case "PREREQUEST":
                 os_log("PREREQUEST: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
-                let locationValue = response.value(forHTTPHeaderField: "Location") ?? "No Location"
+                guard let locationValue = response.value(forHTTPHeaderField: "Location") else {
+                    throw ServerConnectionError.noLocation
+                }
                 os_log("Upload - Received PreRequest to %@", log: OSLog.synchronization, type: .debug, locationValue)
                 guard let locationUrl = URL(string: locationValue) else {
                     throw ServerConnectionError.invalidUploadLocation(locationValue)
