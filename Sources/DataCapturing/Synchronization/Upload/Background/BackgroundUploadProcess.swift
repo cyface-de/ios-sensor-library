@@ -132,7 +132,7 @@ class BackgroundUploadProcess: NSObject {
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .status, httpStatusCode: httpStatusCode, error: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
-            try upload.onFailed()
+            try upload.onFailed(cause: error)
             throw error
         }
     }
@@ -195,7 +195,7 @@ class BackgroundUploadProcess: NSObject {
             os_log("Error: %{PUBLIC}d", log: OSLog.synchronization, type: .debug, httpStatusCode)
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .prerequest, httpStatusCode: httpStatusCode, error: error)
-            try upload.onFailed()
+            try upload.onFailed(cause: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
             throw error
         }
@@ -221,7 +221,7 @@ class BackgroundUploadProcess: NSObject {
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .upload, httpStatusCode: httpStatusCode, error: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
-            try upload.onFailed()
+            try upload.onFailed(cause: error)
             throw error
         }
     }
@@ -269,92 +269,93 @@ extension BackgroundUploadProcess: UploadProcess {
 
 // MARK: - Implementation of Delegates for URLSession
 extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, URLSessionTaskDelegate {
+    /// Called by the system after an upload has finished. This can be called after the app was killed in the background.
+    ///
+    /// To recreate the upload from the serialized storage, the `URLSessionTask` description contains the `measurementIdentifier`, the system did try to upload with this request.
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let response = task.response as? HTTPURLResponse else {
-            os_log("Upload response not received!", log: OSLog.synchronization, type: .error)
-            //self.error = ServerConnectionError.noResponse
-            return
-        }
-        os_log("Upload response received!", log: OSLog.synchronization, type: .debug)
-
-        if let error = error {
-            os_log("Upload Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
-            // TODO: Add proper error handling here
-            return
-        }
-        os_log("Upload was successful!", log: OSLog.synchronization, type: .debug)
-
-        guard let url = response.url else {
-            os_log("Upload - No URL returned from response!", log: OSLog.synchronization, type: .error)
-            return
-        }
-        os_log("Upload targeted URL: %{PUBLiC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
 
         guard let description = task.taskDescription else {
             os_log("Upload - No task description aborting upload!", log: OSLog.synchronization, type: .error)
-            return
+            fatalError("Upload - Wrong call to urlSession. Did not contain a taskDescription!")
         }
         os_log("Upload described as %{PUBLIC}@!", log: OSLog.synchronization, type: .debug, description)
         let descriptionPieces = description.split(separator: ":")
         guard descriptionPieces.count == 2 else {
             os_log("Upload - Invalid task description %@.", log: OSLog.synchronization, type: .error, description)
-            return
+            fatalError("Upload - Task Description was not parseable!")
         }
         let responseType = descriptionPieces[0]
         guard let measurementIdentifier = UInt64(descriptionPieces[1]) else {
-            return
+            fatalError("Upload - Task Description did not contain a valid measurement identifier!")
         }
 
-        do {
-            let measurement = try dataStoreStack.wrapInContextReturn { context in
-                let request = MeasurementMO.fetchRequest()
-                request.predicate = NSPredicate(format: "identifier=%d", measurementIdentifier)
-                request.fetchLimit = 1
-                guard let storedMeasurement = try request.execute().first else {
-                    throw PersistenceError.measurementNotLoadable(measurementIdentifier)
-                }
-                return try FinishedMeasurement(managedObject: storedMeasurement, sensorValueFileFactory: sensorValueFileFactory)
+        let measurement = try! dataStoreStack.wrapInContextReturn { context in
+            let request = MeasurementMO.fetchRequest()
+            request.predicate = NSPredicate(format: "identifier=%d", measurementIdentifier)
+            request.fetchLimit = 1
+            guard let storedMeasurement = try request.execute().first else {
+                throw PersistenceError.measurementNotLoadable(measurementIdentifier)
+            }
+            return try FinishedMeasurement(managedObject: storedMeasurement, sensorValueFileFactory: sensorValueFileFactory)
+        }
+
+        Task {
+            guard var upload = try! sessionRegistry.get(measurement: measurement) else {
+                os_log("Upload - No session registered for Measurement %d!", measurementIdentifier)
+                return
             }
 
-            // Loading the Upload from the session three times is no accident. This is necessary due to multi threading constraints. Do not try to refactor this.
-            // See: https://stackoverflow.com/questions/69556237/use-reference-to-captured-variable-in-concurrently-executing-code
-            switch responseType {
-            case "STATUS":
-                os_log("STATUS: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
-                Task {
-                    guard let upload = try sessionRegistry.get(measurement: measurement) else {
-                        throw PersistenceError.sessionNotRegistered(measurement)
-                    }
-                    try await onReceivedStatusRequest(httpStatusCode: Int16(response.statusCode), upload: upload)
-                }
-            case "PREREQUEST":
-                os_log("PREREQUEST: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
-                guard let locationValue = response.value(forHTTPHeaderField: "Location") else {
-                    throw ServerConnectionError.noLocation
-                }
-                os_log("Upload - Received PreRequest to %@", log: OSLog.synchronization, type: .debug, locationValue)
-                guard let locationUrl = URL(string: locationValue) else {
-                    throw ServerConnectionError.invalidUploadLocation(locationValue)
-                }
+            guard let response = task.response as? HTTPURLResponse else {
+                os_log("Upload response not received!", log: OSLog.synchronization, type: .error)
+                uploadStatus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
+                return
+            }
+            os_log("Upload response received!", log: OSLog.synchronization, type: .debug)
 
-                Task {
-                    guard var upload = try sessionRegistry.get(measurement: measurement) else {
-                        throw PersistenceError.sessionNotRegistered(measurement)
+            if let error = error {
+                os_log("Upload Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
+                uploadStatus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
+                return
+            }
+            os_log("Upload was successful!", log: OSLog.synchronization, type: .debug)
+
+            guard let url = response.url else {
+                os_log("Upload - No URL returned from response!", log: OSLog.synchronization, type: .error)
+                uploadStatus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
+                return
+            }
+            os_log("Upload targeted URL: %{PUBLiC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
+
+            do {
+                // Loading the Upload from the session three times is no accident. This is necessary due to multi threading constraints. Do not try to refactor this.
+                // See: https://stackoverflow.com/questions/69556237/use-reference-to-captured-variable-in-concurrently-executing-code
+                switch responseType {
+                case "STATUS":
+                    os_log("STATUS: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
+                    try await onReceivedStatusRequest(httpStatusCode: Int16(response.statusCode), upload: upload)
+                case "PREREQUEST":
+                    os_log("PREREQUEST: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
+                    guard let locationValue = response.value(forHTTPHeaderField: "Location") else {
+                        throw ServerConnectionError.noLocation
                     }
+                    os_log("Upload - Received PreRequest to %@", log: OSLog.synchronization, type: .debug, locationValue)
+                    guard let locationUrl = URL(string: locationValue) else {
+                        throw ServerConnectionError.invalidUploadLocation(locationValue)
+                    }
+
                     upload.location = locationUrl
                     try await onReceivedPreRequest(httpStatusCode: Int16(response.statusCode), upload: upload)
+                case "UPLOAD":
+                    os_log("UPLOAD", log: OSLog.synchronization, type: .debug)
+                    try onReceivedUploadResponse(httpStatusCode: Int16(response.statusCode), upload: upload)
+                default:
+                    os_log("%{PUBLIC}@", log: OSLog.synchronization, type: .debug, description)
                 }
-            case "UPLOAD":
-                os_log("UPLOAD", log: OSLog.synchronization, type: .debug)
-                guard let upload = try sessionRegistry.get(measurement: measurement) else {
-                    throw PersistenceError.sessionNotRegistered(measurement)
-                }
-                try onReceivedUploadResponse(httpStatusCode: Int16(response.statusCode), upload: upload)
-            default:
-                os_log("%{PUBLIC}@", log: OSLog.synchronization, type: .debug, description)
+            } catch {
+                try! upload.onFailed(cause: error)
+                uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
+                os_log("%{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
             }
-        } catch {
-            os_log("%{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
         }
     }
 

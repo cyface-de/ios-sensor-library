@@ -31,6 +31,7 @@ import Combine
 
  - author: Klemens Muthmann
  */
+@available(*, deprecated, message: "Use BackgroundUploadProcess instead.")
 public struct DefaultUploadProcess {
     // MARK: - Properties
     /// Session registry storing sessions open for resume.
@@ -88,11 +89,10 @@ public struct DefaultUploadProcess {
 
     /// Called after a failed upload request.
     private func onFailedUploadRequest(authToken: String, upload: any Upload, error: Error) async throws -> any Upload {
-        var upload = upload
-        upload.failedUploadsCounter += 1
+        let upload = upload
+        try upload.onFailed(cause: error)
 
-        if upload.failedUploadsCounter > 3 {
-            upload.failedUploadsCounter = 0
+        if upload.failures.count > 3 {
             throw error
         } else {
             let statusRequest = StatusRequest(apiUrl: apiUrl, session: urlSession, authToken: authToken)

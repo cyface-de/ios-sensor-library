@@ -27,7 +27,7 @@ import Foundation
 public protocol Upload: Equatable {
     // MARK: - Properties
     /// The amount of failed uploads before retrying is stopped.
-    var failedUploadsCounter: Int {get set}
+    var failures: [Error] {get}
     /// The ``FinishedMeasurement`` to upload.
     var measurement: FinishedMeasurement { get }
     /// The location to send the data to or `nil` if no location was requested from the server yet.
@@ -41,7 +41,7 @@ public protocol Upload: Equatable {
     /// A function carried out on a successful upload.
     func onSuccess() throws
     /// Called if this upload has failed and is unrecoverable.
-    func onFailed() throws
+    func onFailed(cause: Error) throws
 }
 
 /**
@@ -54,7 +54,7 @@ public class CoreDataBackedUpload: Upload {
     /// A cache for the actual measurement to upload, so we don't have to reload it from the database all the time.
     public var measurement: FinishedMeasurement
     /// A counter of the number of failed attempts to run this upload. This can be used to stop retrying after a certain amount of retries.
-    public var failedUploadsCounter = 0
+    public var failures: [Error]
     /// The location of the active session for this upload or `nil` if no successful pre request has been send and received yet.
     public var location: URL?
     // MARK: - Internal Properties
@@ -72,6 +72,7 @@ public class CoreDataBackedUpload: Upload {
     public init(dataStoreStack: DataStoreStack, measurement: FinishedMeasurement) {
         self.measurement = measurement
         self.dataStoreStack = dataStoreStack
+        self.failures = [Error]()
     }
 
     // MARK: - Methods
@@ -154,7 +155,8 @@ public class CoreDataBackedUpload: Upload {
         }
     }
 
-    public func onFailed() throws {
+    public func onFailed(cause: Error) throws {
+        failures.append(cause)
         try dataStoreStack.wrapInContext { context in
             let request = MeasurementMO.fetchRequest()
             request.predicate = NSPredicate(format: "identifier == %d", measurement.identifier)
