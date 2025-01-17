@@ -86,16 +86,16 @@ class BackgroundUploadProcess: NSObject {
         self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
         super.init()
 
-        uploadStatusCancellable = uploadStatus.sink { [weak self] status in
+        uploadStatusCancellable = uploadStatus.sink { status in
             switch status.status {
             case .finishedSuccessfully:
                 try! status.upload.onSuccess()
-                try! self?.sessionRegistry.remove(upload: status.upload)
+                //try! self?.sessionRegistry.remove(upload: status.upload)
             case .finishedWithError(cause: let error):
                 try! status.upload.onFailed(cause: error)
-                try! self?.sessionRegistry.remove(upload: status.upload)
-            case .finishedUnsuccessfully:
-                try! self?.sessionRegistry.remove(upload: status.upload)
+                //try! self?.sessionRegistry.remove(upload: status.upload)
+            //case .finishedUnsuccessfully:
+                //try! self?.sessionRegistry.remove(upload: status.upload)
             default:
                 break
             }

@@ -166,7 +166,7 @@ public class CoreDataBackedUpload: Upload {
             }
 
             databaseMeasurement.synchronizable = false
-            databaseMeasurement.synchronized = false
+            databaseMeasurement.synchronized = true
             try context.save()
         }
     }
