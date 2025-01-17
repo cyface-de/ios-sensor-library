@@ -38,8 +38,6 @@ struct BackgroundPreRequest {
     let authToken: String
     /// Encoder to write the meta data as JSON into the requests body.
     let jsonEncoder = JSONEncoder()
-    /// The registry with all the current active upload sessions.
-    var sessionRegistry: SessionRegistry
 
     /// Schedule sending this request.
     ///

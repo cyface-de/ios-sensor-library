@@ -47,7 +47,7 @@ public enum UploadStatusType: CustomStringConvertible {
     case finishedSuccessfully
     /// Encountered an issue but a retry is advisable.
     case finishedUnsuccessfully
-    /// Upload failed because of the provided error.
+    /// Upload failed because of the provided error. No further upload attempts should be started.
     case finishedWithError(cause: Error)
 
     public var description: String {

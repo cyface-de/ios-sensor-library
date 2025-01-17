@@ -61,6 +61,8 @@ class BackgroundUploadProcess: NSObject {
     let uploadStatus = PassthroughSubject<UploadStatus, Never>()
     let sensorValueFileFactory: any SensorValueFileFactory
     var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
+    /// Store processing of upload status functions as long as this object is alive.
+    var uploadStatusCancellable: AnyCancellable?
 
     // MARK: - Initializers
     /// Create a new complete instance of this class.
@@ -82,6 +84,22 @@ class BackgroundUploadProcess: NSObject {
         self.authenticator = authenticator
         self.sensorValueFileFactory = sensorValueFileFactory
         self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
+        super.init()
+
+        uploadStatusCancellable = uploadStatus.sink { [weak self] status in
+            switch status.status {
+            case .finishedSuccessfully:
+                try! status.upload.onSuccess()
+                try! self?.sessionRegistry.remove(upload: status.upload)
+            case .finishedWithError(cause: let error):
+                try! status.upload.onFailed(cause: error)
+                try! self?.sessionRegistry.remove(upload: status.upload)
+            case .finishedUnsuccessfully:
+                try! self?.sessionRegistry.remove(upload: status.upload)
+            default:
+                break
+            }
+        }
     }
 
     // MARK: - Methods
@@ -91,9 +109,7 @@ class BackgroundUploadProcess: NSObject {
         case 200: // Upload abgeschlossen. Ignorieren
             os_log("200", log: OSLog.synchronization, type: .debug)
             try sessionRegistry.record(upload: upload, .status, httpStatusCode: httpStatusCode, message: "OK", time: Date.now)
-            try sessionRegistry.remove(upload: upload)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
-            try upload.onSuccess()
 
         case 308: // Upload fortsetzen
             // TODO: Header zum Fortsetzen setzen
@@ -123,8 +139,8 @@ class BackgroundUploadProcess: NSObject {
                 collectorUrl: collectorUrl,
                 session: discretionaryUrlSession,
                 upload: upload,
-                authToken: try await authenticator.authenticate(),
-                sessionRegistry: sessionRegistry)
+                authToken: try await authenticator.authenticate()
+            )
             try preRequest.send()
 
         default:
@@ -132,7 +148,6 @@ class BackgroundUploadProcess: NSObject {
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .status, httpStatusCode: httpStatusCode, error: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
-            try upload.onFailed(cause: error)
             throw error
         }
     }
@@ -174,8 +189,6 @@ class BackgroundUploadProcess: NSObject {
                 message: "Conflict",
                 time: Date.now
             )
-            try sessionRegistry.remove(upload: upload)
-            try upload.onSuccess()
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
 
         case 412: // Server does not accept this upload. Cancel and mark as finished
@@ -187,15 +200,12 @@ class BackgroundUploadProcess: NSObject {
                 message: "Precondition Failed",
                 time: Date.now
             )
-            try sessionRegistry.remove(upload: upload)
-            try upload.onSuccess()
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
 
         default:
             os_log("Error: %{PUBLIC}d", log: OSLog.synchronization, type: .debug, httpStatusCode)
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .prerequest, httpStatusCode: httpStatusCode, error: error)
-            try upload.onFailed(cause: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
             throw error
         }
@@ -213,15 +223,12 @@ class BackgroundUploadProcess: NSObject {
                 message: "Created",
                 time: Date.now
             )
-            try sessionRegistry.remove(upload: upload)
-            try upload.onSuccess()
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
         default:
             os_log("Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, httpStatusCode)
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
             try sessionRegistry.record(upload: upload, .upload, httpStatusCode: httpStatusCode, error: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
-            try upload.onFailed(cause: error)
             throw error
         }
     }
@@ -252,8 +259,7 @@ extension BackgroundUploadProcess: UploadProcess {
                 collectorUrl: collectorUrl,
                 session: discretionaryUrlSession,
                 upload: upload,
-                authToken: try await authenticator.authenticate(),
-                sessionRegistry: sessionRegistry
+                authToken: try await authenticator.authenticate()
             )
             try preRequest.send()
             /// If the pre request was successful create a session and start uploading the data
@@ -352,7 +358,6 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
                     os_log("%{PUBLIC}@", log: OSLog.synchronization, type: .debug, description)
                 }
             } catch {
-                try! upload.onFailed(cause: error)
                 uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
                 os_log("%{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
             }
