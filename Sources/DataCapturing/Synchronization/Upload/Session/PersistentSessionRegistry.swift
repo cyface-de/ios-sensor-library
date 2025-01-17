@@ -114,6 +114,8 @@ public class PersistentSessionRegistry: SessionRegistry {
             }
 
             context.delete(session)
+
+            try context.save()
         }
     }
 
