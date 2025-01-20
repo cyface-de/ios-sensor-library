@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Cyface GmbH
+ * Copyright 2022-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -67,7 +67,7 @@ public struct MetaData: Encodable {
     /// The  version of the operation system, when transmitting the measurement.
     let osVersion: String
     /// The current version of the Cyface application transmitting the measurement.
-    let applicationVersion: String
+    let appVersion: String
     /// The length of the transmitted measurement in meters.
     let length: Double
     /// The starting modalitiy used for capturing the measurement.
@@ -88,7 +88,7 @@ public struct MetaData: Encodable {
         self.endLocTS = endLocTS
         self.measurementId = measurementId
         self.osVersion = osVersion
-        self.applicationVersion = applicationVersion
+        self.appVersion = applicationVersion
         self.length = length
         self.modality = modality
     }
@@ -102,7 +102,7 @@ public struct MetaData: Encodable {
         request.setValue(String(formatVersion), forHTTPHeaderField: "formatVersion")
         request.setValue(deviceType, forHTTPHeaderField: "deviceType")
         request.setValue(osVersion, forHTTPHeaderField: "osVersion")
-        request.setValue(applicationVersion, forHTTPHeaderField: "appVersion")
+        request.setValue(appVersion, forHTTPHeaderField: "appVersion")
         request.setValue(String(length), forHTTPHeaderField: "length")
         request.setValue(modality, forHTTPHeaderField: "modality")
 
