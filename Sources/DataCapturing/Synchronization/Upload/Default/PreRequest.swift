@@ -58,7 +58,7 @@ class PreRequest {
         request.setValue("\(data.count)", forHTTPHeaderField: "x-upload-content-length")
         request.setValue("application/octet-stream", forHTTPHeaderField: "x-upload-content-type")
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("Cyface-iOS-Client/\(metaData.applicationVersion) (gzip)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Cyface-iOS-Client/\(metaData.appVersion) (gzip)", forHTTPHeaderField: "User-Agent")
         request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
         request.httpMethod = "POST"
 
