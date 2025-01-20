@@ -358,9 +358,20 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
                     os_log("%{PUBLIC}@", log: OSLog.synchronization, type: .debug, description)
                 }
             } catch {
+                try sessionRegistry.record(upload: upload, from(text: String(responseType)), httpStatusCode: Int16(response.statusCode), error: error)
                 uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
                 os_log("%{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
             }
+        }
+    }
+
+    private func from(text: String) -> RequestType {
+        if text == "STATUS" {
+            return .status
+        } else if text == "PREREQUEST" {
+            return .prerequest
+        } else {
+            return .upload
         }
     }
 
