@@ -90,12 +90,8 @@ class BackgroundUploadProcess: NSObject {
             switch status.status {
             case .finishedSuccessfully:
                 try! status.upload.onSuccess()
-                //try! self?.sessionRegistry.remove(upload: status.upload)
-            case .finishedWithError(cause: let error):
-                try! status.upload.onFailed(cause: error)
-                //try! self?.sessionRegistry.remove(upload: status.upload)
-            //case .finishedUnsuccessfully:
-                //try! self?.sessionRegistry.remove(upload: status.upload)
+            //case .finishedWithError(cause: let error):
+            //    try! status.upload.onFailed(cause: error)
             default:
                 break
             }
