@@ -77,7 +77,21 @@ public struct MetaData {
     /// The type of the device transmitting the data.
     let deviceType = modelIdentifier
 
-    public init(locationCount: UInt64, formatVersion: Int, startLocLat: Double?, startLocLon: Double?, startLocTS: Date?, endLocLat: Double?, endLocLon: Double?, endLocTS: Date?, measurementId: UInt64, osVersion: String, applicationVersion: String, length: Double, modality: String) {
+    public init(
+        locationCount: UInt64,
+        formatVersion: Int,
+        startLocLat: Double?,
+        startLocLon: Double?,
+        startLocTS: Date?,
+        endLocLat: Double?,
+        endLocLon: Double?,
+        endLocTS: Date?,
+        measurementId: UInt64,
+        osVersion: String,
+        applicationVersion: String,
+        length: Double,
+        modality: String
+    ) {
         self.locationCount = locationCount
         self.formatVersion = formatVersion
         self.startLocLat = startLocLat
@@ -151,12 +165,14 @@ extension MetaData: Encodable {
         try container.encode(locationCount, forKey: .locationCount)
         try container.encode(formatVersion, forKey: .formatVersion)
         if let startLocTS = startLocTS, let startLocLat = startLocLat, let startLocLon = startLocLon {
-            try container.encode(startLocTS.timeIntervalSince1970 * 1000, forKey: .startLocTS)
+            let tsAsInt = Int64(startLocTS.timeIntervalSince1970 * 1000)
+            try container.encode(tsAsInt, forKey: .startLocTS)
             try container.encode(startLocLat, forKey: .startLocLat)
             try container.encode(startLocLon, forKey: .startLocLon)
         }
         if let endLocTS = endLocTS, let endLocLat = endLocLat, let endLocLon = endLocLon {
-            try container.encode(endLocTS.timeIntervalSince1970 * 1000, forKey: .endLocTS)
+            let tsAsInt = Int64(endLocTS.timeIntervalSince1970 * 1000)
+            try container.encode(tsAsInt, forKey: .endLocTS)
             try container.encode(endLocLat, forKey: .endLocLat)
             try container.encode(endLocLon, forKey: .endLocLon)
         }

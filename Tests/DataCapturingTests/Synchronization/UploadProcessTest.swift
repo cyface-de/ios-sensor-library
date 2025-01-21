@@ -69,7 +69,7 @@ class UploadProcessTest: XCTestCase {
 
 
         // Assert
-        XCTAssertEqual(result.failedUploadsCounter, 0)
+        XCTAssertEqual(result.failures.count, 0)
         XCTAssertEqual(result.measurement.identifier, 1)
         XCTAssertTrue(result is MockUpload)
         XCTAssertEqual((result as! MockUpload).wasSuccessful, true)
@@ -105,7 +105,7 @@ class UploadProcessTest: XCTestCase {
         // Assert
         XCTAssertTrue(result is MockUpload)
         let mockResult = result as! MockUpload
-        XCTAssertEqual(mockResult.failedUploadsCounter, 1)
+        XCTAssertEqual(mockResult.failures.count, 1)
         XCTAssertEqual(mockResult.wasSuccessful, true)
     }
 }
