@@ -45,7 +45,7 @@ var installationIdentifier: String {
 
  - author: Klemens Muthmann
  */
-public struct MetaData: Encodable {
+public struct MetaData {
     /// The number of locations of the transmittable measurement.
     let locationCount: UInt64
     /// The data format used to encode the payload data.
@@ -124,5 +124,48 @@ public struct MetaData: Encodable {
         if let endLocTS = endLocTS {
             request.setValue(String(convertToUtcTimestamp(date: endLocTS)), forHTTPHeaderField: "endLocTS")
         }
+    }
+}
+
+extension MetaData: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case locationCount
+        case formatVersion
+        case startLocLat
+        case startLocLon
+        case startLocTS
+        case endLocLat
+        case endLocLon
+        case endLocTS
+        case deviceId
+        case measurementId
+        case osVersion
+        case appVersion
+        case deviceType
+        case length
+        case modality
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(locationCount, forKey: .locationCount)
+        try container.encode(formatVersion, forKey: .formatVersion)
+        if let startLocTS = startLocTS, let startLocLat = startLocLat, let startLocLon = startLocLon {
+            try container.encode(startLocTS.timeIntervalSince1970 * 1000, forKey: .startLocTS)
+            try container.encode(startLocLat, forKey: .startLocLat)
+            try container.encode(startLocLon, forKey: .startLocLon)
+        }
+        if let endLocTS = endLocTS, let endLocLat = endLocLat, let endLocLon = endLocLon {
+            try container.encode(endLocTS.timeIntervalSince1970 * 1000, forKey: .endLocTS)
+            try container.encode(endLocLat, forKey: .endLocLat)
+            try container.encode(endLocLon, forKey: .endLocLon)
+        }
+        try container.encode(measurementId, forKey: .measurementId)
+        try container.encode(deviceId, forKey: .deviceId)
+        try container.encode(deviceType, forKey: .deviceType)
+        try container.encode(osVersion, forKey: .osVersion)
+        try container.encode(appVersion, forKey: .appVersion)
+        try container.encode(length, forKey: .length)
+        try container.encode(modality, forKey: .modality)
     }
 }
