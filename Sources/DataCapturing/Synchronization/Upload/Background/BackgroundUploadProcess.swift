@@ -150,6 +150,7 @@ class BackgroundUploadProcess: NSObject {
 
     /// Handle the response to a Google Media Upload Protocol pre request.
     private func onReceivedPreRequest(httpStatusCode: Int16, upload: any Upload) async throws {
+        deletePreRequestData(for: upload.measurement)
         switch httpStatusCode {
         case 200: // Send Upload Request
             os_log("200", log: OSLog.synchronization, type: .debug)
@@ -226,6 +227,15 @@ class BackgroundUploadProcess: NSObject {
             try sessionRegistry.record(upload: upload, .upload, httpStatusCode: httpStatusCode, error: error)
             uploadStatus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
             throw error
+        }
+    }
+
+    private func deletePreRequestData(for measurement: FinishedMeasurement) {
+        let target = FileManager.default.temporaryDirectory.appendingPathComponent("\(measurement.identifier)")
+        do {
+            try FileManager.default.removeItem(at: target)
+        } catch {
+            os_log("Failed to delete pre-request data for %{PUBLIC}d: %{PUBLIC}@", log: OSLog.synchronization, type: .error, measurement.identifier, target.absoluteString)
         }
     }
 }
