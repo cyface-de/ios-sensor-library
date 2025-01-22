@@ -20,7 +20,7 @@ let package = Package(
         // Apple library to handle Protobuf conversion for transmitting files in the Protobuf format.
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.2"),
         // Library for handling OAuth Login Process
-        .package(url: "https://github.com/openid/AppAuth-iOS.git", .upToNextMajor(from: "1.7.5")),
+        .package(url: "https://github.com/openid/AppAuth-iOS.git", .upToNextMajor(from: "1.7.6")),
 
         // Test Dependencies
         // Mocker provides functionality to Mock Network communication allowing us to test the data transfer layer.
