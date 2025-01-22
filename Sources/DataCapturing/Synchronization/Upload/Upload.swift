@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Cyface GmbH
+ * Copyright 2022-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -26,7 +26,7 @@ import Foundation
  */
 public protocol Upload: Equatable {
     // MARK: - Properties
-    /// The amount of failed uploads before retrying is stopped.
+    /// A list of failures caused by this upload, if any.
     var failures: [Error] {get}
     /// The ``FinishedMeasurement`` to upload.
     var measurement: FinishedMeasurement { get }
@@ -40,7 +40,7 @@ public protocol Upload: Equatable {
     func data() throws -> Data
     /// A function carried out on a successful upload.
     func onSuccess() throws
-    /// Called if this upload has failed and is unrecoverable.
+    /// Called if this upload has failed.
     func onFailed(cause: Error) throws
 }
 
@@ -157,18 +157,6 @@ public class CoreDataBackedUpload: Upload {
 
     public func onFailed(cause: Error) throws {
         failures.append(cause)
-        try dataStoreStack.wrapInContext { context in
-            let request = MeasurementMO.fetchRequest()
-            request.predicate = NSPredicate(format: "identifier == %d", measurement.identifier)
-            request.fetchLimit = 1
-            guard let databaseMeasurement = try request.execute().first else {
-                throw UploadError.notAvailable(measurement: measurement)
-            }
-
-            databaseMeasurement.synchronizable = false
-            databaseMeasurement.synchronized = true
-            try context.save()
-        }
     }
 
     /// Load a measurement from CoreData and return the measurement together with the initial modality.

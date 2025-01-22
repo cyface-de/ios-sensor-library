@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Cyface GmbH
+ * Copyright 2023-2025 Cyface GmbH
  *
  * This file is part of the Ready for Robots App.
  *
@@ -42,6 +42,8 @@ public class OAuthAuthenticator {
     /// The internal AppAuth auth state.
     /// This is the central place from the framework, where auth information is stored.
     private var _authState: OIDAuthState?
+    /// A key to serialize the current authentication state. If `nil` a default value will be used.
+    private var authStateKey: String
     /// The issuer is the identity provider used to authenticate with a Ready for Robots account. Ready for Robots uses Keycloak as identity provider.
     public let issuer: URL
     /// A URI used by the identity provider to hand control back to the application.
@@ -70,12 +72,18 @@ public class OAuthAuthenticator {
     ///     - redirectUri: A URI used by the identity provider to hand control back to the application.
     ///     - apiEndpoint: The endpoint running the Cyface API containing user self management.
     ///     - clientId: The identifier registered for this client with the identity provider.
-    public init(issuer: URL, redirectUri: URL, apiEndpoint: URL, clientId: String) {
+    ///     - authStateKey: A key to serialize the current authentication state. If `nil` a default value will be used
+    public init(issuer: URL, redirectUri: URL, apiEndpoint: URL, clientId: String, authStateKey: String? = nil) {
         self.issuer = issuer
         self.redirectUri = redirectUri
         self.clientId = clientId
         self.apiEndpoint = apiEndpoint
-        self._authState = try? loadState(OAuthAuthenticator.appAuthStateKey)
+        if let authStateKey = authStateKey {
+            self.authStateKey = authStateKey
+        } else {
+            self.authStateKey = OAuthAuthenticator.appAuthStateKey
+        }
+        self._authState = try? loadState(self.authStateKey)
     }
 
     // MARK: - Methods
@@ -160,6 +168,7 @@ public class OAuthAuthenticator {
             UserDefaults.standard.set(archivedAuthState, forKey: appAuthStateKey)
         } else {
             UserDefaults.standard.removeObject(forKey: appAuthStateKey)
+            self._authState = nil
         }
         UserDefaults.standard.synchronize()
     }
@@ -178,7 +187,7 @@ public class OAuthAuthenticator {
     /// Used to write a new state and make sure, that state is also saved to persistent storage, so the state survives if the system kills the app.
     private func authState(from state: OIDAuthState?) throws {
         self._authState = state
-        try saveState(state, OAuthAuthenticator.appAuthStateKey)
+        try saveState(state, authStateKey)
     }
 
     // MARK: - Internal Data Structures
@@ -246,7 +255,7 @@ extension OAuthAuthenticator: Authenticator {
     public func authenticate() async throws -> String {
         os_log("Authentication: Starting Authentication", log: OSLog.authorization, type: .debug)
         os_log("Authentication: Address used to access identity provider %@", log: OSLog.authorization, type: .debug, issuer.absoluteString)
-        if let authState = try loadState(OAuthAuthenticator.appAuthStateKey), authState.refreshToken != nil {
+        if let authState = try loadState(authStateKey), authState.refreshToken != nil {
             let result: String = try await withCheckedThrowingContinuation { continuation in
                 authState.performAction(freshTokens: { (accessToken, idToken, error) in
                     os_log("Authentication: Refreshed Authentication Information.", log: OSLog.authorization, type: .debug)
@@ -335,6 +344,7 @@ extension OAuthAuthenticator: Authenticator {
         guard httpResponse.statusCode == 202 else {
             throw OAuthAuthenticatorError.errorResponse(status: httpResponse.statusCode)
         }
+        try authState(from: nil)
     }
 
     // TODO: try to remove this and see if login process works as expected.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -90,8 +90,8 @@ class BackgroundUploadProcess: NSObject {
             switch status.status {
             case .finishedSuccessfully:
                 try! status.upload.onSuccess()
-            //case .finishedWithError(cause: let error):
-            //    try! status.upload.onFailed(cause: error)
+            case .finishedWithError(cause: let error):
+                try! status.upload.onFailed(cause: error)
             default:
                 break
             }
@@ -230,6 +230,7 @@ class BackgroundUploadProcess: NSObject {
         }
     }
 
+    /// Delete the file containing MetaData for a PreRequest from the temporary file location.
     private func deletePreRequestData(for measurement: FinishedMeasurement) {
         let target = FileManager.default.temporaryDirectory.appendingPathComponent("\(measurement.identifier)")
         do {
@@ -339,8 +340,6 @@ extension BackgroundUploadProcess: URLSessionDelegate, URLSessionDataDelegate, U
             os_log("Upload targeted URL: %{PUBLiC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
 
             do {
-                // Loading the Upload from the session three times is no accident. This is necessary due to multi threading constraints. Do not try to refactor this.
-                // See: https://stackoverflow.com/questions/69556237/use-reference-to-captured-variable-in-concurrently-executing-code
                 switch responseType {
                 case "STATUS":
                     os_log("STATUS: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)

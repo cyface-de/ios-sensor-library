@@ -1,4 +1,3 @@
-//
 /*
  * Copyright 2025 Cyface GmbH
  *
@@ -24,7 +23,8 @@ import Testing
 
 struct JSONSerializationTest {
 
-    @Test func convertMetaDataToJSON() async throws {
+    @Test("Check if converting a MetaData object into JSON works as expected!")
+    func convertMetaDataToJSON() async throws {
         // Arrange
         let oocut = MetaData(
             locationCount: 10,
