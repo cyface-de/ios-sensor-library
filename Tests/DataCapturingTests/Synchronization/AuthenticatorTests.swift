@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Ready for Robots App.
  *
@@ -24,11 +24,13 @@ import AppAuth
 
 @Test("Test that saving the authentication state and reloading from disk works, as expected.", .tags(.authentication, .synchronization))
 func savingAuthStateHappyPath() async throws {
+    // Arrange
     let oocut = OAuthAuthenticator(
         issuer: URL(string: "http://localhost/")!,
         redirectUri: URL(string: "http://localhost/callback")!,
         apiEndpoint: URL(string: "http://localhost/api")!,
-        clientId: "ios-client"
+        clientId: "ios-client",
+        authStateKey: "de.cyface.test.authstate"
     )
 
     let testConfiguration = OIDServiceConfiguration(
@@ -48,9 +50,13 @@ func savingAuthStateHappyPath() async throws {
     let testResponse = OIDAuthorizationResponse(request: testRequest, parameters: [:])
     let testState = OIDAuthState(authorizationResponse: testResponse)
 
+    // Act
+    // Clean the saved state prior to execution.
+    try oocut.saveState(nil, "de.cyface.test.authstate")
     try oocut.saveState(testState, "de.cyface.test.authstate")
     let loadedState = try oocut.loadState("de.cyface.test.authstate")
 
+    // Assert
     // OIDAuthState does not implement isEqual and thus direct comparison always fails.
     // We are just comparing a few attributes here
     // There is an open issue about this: https://github.com/openid/AppAuth-iOS/issues/122

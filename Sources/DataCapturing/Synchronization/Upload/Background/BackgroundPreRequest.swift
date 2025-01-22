@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -38,8 +38,6 @@ struct BackgroundPreRequest {
     let authToken: String
     /// Encoder to write the meta data as JSON into the requests body.
     let jsonEncoder = JSONEncoder()
-    /// The registry with all the current active upload sessions.
-    var sessionRegistry: SessionRegistry
 
     /// Schedule sending this request.
     ///
@@ -58,7 +56,7 @@ struct BackgroundPreRequest {
         request.setValue("\(data.count)", forHTTPHeaderField: "x-upload-content-length")
         request.setValue("application/octet-stream", forHTTPHeaderField: "x-upload-content-type")
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("Cyface-iOS-Client/\(metaData.applicationVersion) (gzip)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Cyface-iOS-Client/\(metaData.appVersion) (gzip)", forHTTPHeaderField: "User-Agent")
         request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
         request.httpMethod = httpMethod
 

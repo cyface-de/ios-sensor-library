@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Cyface GmbH
+ * Copyright 2019-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -37,19 +37,18 @@ class MockUpload: Upload {
     /// The measurement to upload.
     var measurement: FinishedMeasurement
 
-    /// The counter for this uploads failures.
-    var failedUploadsCounter: Int = 0
-
     /// Check this to see whether `onSuccess` has been called
     var wasSuccessful = false
 
     /// An optionally empty location to store the upload at.
     var location: URL?
+    var failures: [any Error]
 
     // MARK: - Initializers
     /// Initialize this class with a simulated measurement identifier.
     init(measurement: FinishedMeasurement) {
         self.measurement = measurement
+        self.failures = [Error]()
     }
 
     // MARK: - Methods
@@ -94,5 +93,9 @@ class MockUpload: Upload {
 
     func onFailed() throws {
         wasSuccessful = false
+    }
+
+    func onFailed(cause: any Error) throws {
+        failures.append(cause)
     }
 }

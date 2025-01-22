@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -114,6 +114,8 @@ public class PersistentSessionRegistry: SessionRegistry {
             }
 
             context.delete(session)
+
+            try context.save()
         }
     }
 

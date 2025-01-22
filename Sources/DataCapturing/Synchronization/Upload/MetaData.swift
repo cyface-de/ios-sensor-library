@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Cyface GmbH
+ * Copyright 2022-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -45,7 +45,7 @@ var installationIdentifier: String {
 
  - author: Klemens Muthmann
  */
-public struct MetaData: Encodable {
+public struct MetaData {
     /// The number of locations of the transmittable measurement.
     let locationCount: UInt64
     /// The data format used to encode the payload data.
@@ -67,7 +67,7 @@ public struct MetaData: Encodable {
     /// The  version of the operation system, when transmitting the measurement.
     let osVersion: String
     /// The current version of the Cyface application transmitting the measurement.
-    let applicationVersion: String
+    let appVersion: String
     /// The length of the transmitted measurement in meters.
     let length: Double
     /// The starting modalitiy used for capturing the measurement.
@@ -77,7 +77,21 @@ public struct MetaData: Encodable {
     /// The type of the device transmitting the data.
     let deviceType = modelIdentifier
 
-    public init(locationCount: UInt64, formatVersion: Int, startLocLat: Double?, startLocLon: Double?, startLocTS: Date?, endLocLat: Double?, endLocLon: Double?, endLocTS: Date?, measurementId: UInt64, osVersion: String, applicationVersion: String, length: Double, modality: String) {
+    public init(
+        locationCount: UInt64,
+        formatVersion: Int,
+        startLocLat: Double?,
+        startLocLon: Double?,
+        startLocTS: Date?,
+        endLocLat: Double?,
+        endLocLon: Double?,
+        endLocTS: Date?,
+        measurementId: UInt64,
+        osVersion: String,
+        applicationVersion: String,
+        length: Double,
+        modality: String
+    ) {
         self.locationCount = locationCount
         self.formatVersion = formatVersion
         self.startLocLat = startLocLat
@@ -88,7 +102,7 @@ public struct MetaData: Encodable {
         self.endLocTS = endLocTS
         self.measurementId = measurementId
         self.osVersion = osVersion
-        self.applicationVersion = applicationVersion
+        self.appVersion = applicationVersion
         self.length = length
         self.modality = modality
     }
@@ -102,7 +116,7 @@ public struct MetaData: Encodable {
         request.setValue(String(formatVersion), forHTTPHeaderField: "formatVersion")
         request.setValue(deviceType, forHTTPHeaderField: "deviceType")
         request.setValue(osVersion, forHTTPHeaderField: "osVersion")
-        request.setValue(applicationVersion, forHTTPHeaderField: "appVersion")
+        request.setValue(appVersion, forHTTPHeaderField: "appVersion")
         request.setValue(String(length), forHTTPHeaderField: "length")
         request.setValue(modality, forHTTPHeaderField: "modality")
 
@@ -124,5 +138,50 @@ public struct MetaData: Encodable {
         if let endLocTS = endLocTS {
             request.setValue(String(convertToUtcTimestamp(date: endLocTS)), forHTTPHeaderField: "endLocTS")
         }
+    }
+}
+
+extension MetaData: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case locationCount
+        case formatVersion
+        case startLocLat
+        case startLocLon
+        case startLocTS
+        case endLocLat
+        case endLocLon
+        case endLocTS
+        case deviceId
+        case measurementId
+        case osVersion
+        case appVersion
+        case deviceType
+        case length
+        case modality
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(locationCount, forKey: .locationCount)
+        try container.encode(formatVersion, forKey: .formatVersion)
+        if let startLocTS = startLocTS, let startLocLat = startLocLat, let startLocLon = startLocLon {
+            let tsAsInt = Int64(startLocTS.timeIntervalSince1970 * 1000)
+            try container.encode(tsAsInt, forKey: .startLocTS)
+            try container.encode(startLocLat, forKey: .startLocLat)
+            try container.encode(startLocLon, forKey: .startLocLon)
+        }
+        if let endLocTS = endLocTS, let endLocLat = endLocLat, let endLocLon = endLocLon {
+            let tsAsInt = Int64(endLocTS.timeIntervalSince1970 * 1000)
+            try container.encode(tsAsInt, forKey: .endLocTS)
+            try container.encode(endLocLat, forKey: .endLocLat)
+            try container.encode(endLocLon, forKey: .endLocLon)
+        }
+        try container.encode(measurementId, forKey: .measurementId)
+        try container.encode(deviceId, forKey: .deviceId)
+        try container.encode(deviceType, forKey: .deviceType)
+        try container.encode(osVersion, forKey: .osVersion)
+        try container.encode(appVersion, forKey: .appVersion)
+        try container.encode(length, forKey: .length)
+        try container.encode(modality, forKey: .modality)
     }
 }
