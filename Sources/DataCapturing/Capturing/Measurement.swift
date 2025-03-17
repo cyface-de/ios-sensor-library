@@ -160,9 +160,11 @@ public class MeasurementImpl {
      This method is a collection of all operations necessary during pause as well as stop.
      */
     func stopCapturing() {
+        os_log(.debug, log: .measurement, "Measurement: Stopping Capturing")
         sensorCapturer.stop()
         locationCapturer.stop()
         isRunning = false
+        os_log(.debug, log: .measurement, "Measurement: Stopped Capturing successfully!")
     }
 
     // TODO: Sensor Capturer should only handle one type of sensor and be instantiated four times. Once per sensor.

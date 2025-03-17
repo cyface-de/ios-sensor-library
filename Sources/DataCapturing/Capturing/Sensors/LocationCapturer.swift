@@ -102,6 +102,7 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     public func stop() {
         self.coreLocationManager.stopUpdatingLocation()
         coreLocationManager.locationDelegate = nil
+        os_log(.info, log: .capturing, "LocationCapturer: Stopping Location Capturer")
     }
 
     /// Checks the validity of a locations update time with respect to the previously captured location.
