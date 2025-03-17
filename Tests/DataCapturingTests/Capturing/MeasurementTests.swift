@@ -20,6 +20,7 @@
 import Testing
 import CoreMotion
 import Combine
+import OSLog
 @testable import DataCapturing
 
 /**
@@ -281,5 +282,9 @@ struct MockLocationCapturer: LocationCapturer {
         return messageBus.eraseToAnyPublisher()
     }
     
-    func stop() { }
+    func stop() {
+        os_log(.debug, log: .capturing, "MockLocationCapturer: Stopping!")
+        messageBus.send(completion: .finished)
+        os_log(.debug, log: .capturing, "MockLocationCapturer: Stopped Successfully!")
+    }
 }
