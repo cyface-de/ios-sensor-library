@@ -222,7 +222,7 @@ Starting data capturing on paused service. Finishing paused measurements and sta
 
             _events.send(.stopped(timestamp: Date()))
             _events.send(completion: .finished)
-            messageCancellable?.cancel()
+            messageCancellable = nil
         }
     }
 
