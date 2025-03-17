@@ -84,11 +84,13 @@ public class MeasurementImpl {
     /// `true` if data capturing was running but is currently paused; `false` otherwise.
     public var isPaused: Bool
 
-    /// An object that handles capturing of values from the smartphones sensors excluding geo locations (GPS, GLONASS, GALILEO, etc.).
+    /// An object that handles capturing of values from the smartphones IMU sensors.
     private let sensorCapturer: SensorCapturer
 
+    /// Responsible for capturing GNSS (GPS, GLONASS, GALILEO, etc.) locations during the measurement.
     private let locationCapturer: LocationCapturer
 
+    /// The compose subject used to publish `Message`
     private let _events: PassthroughSubject<Message, Never>
 
     /**
@@ -107,8 +109,8 @@ public class MeasurementImpl {
      Creates a new completely initialized `DataCapturingService` accessing data a certain amount of times per second.
 
      - Parameters:
-        - capturingQueue: The background queue to run data capturing on, so the UI is not blocked.
-        - locationManagerFactory: A factory creating a *CoreLocation* `LocationManager` on demand. This can also be used to inject a mock implementation.
+        - sensorCapturer: Responsible for capturing data from the Smartphones IMU sensors.
+        - locationCapturer: Responsible for capturing GNSS (GPS, GLONASS, GALILEO, etc.) locations during the measurement.
      */
     public init(
         sensorCapturer: SensorCapturer,
@@ -252,7 +254,6 @@ Starting data capturing on paused service. Finishing paused measurements and sta
 
      - Throws: `DataCapturingError.notPaused`: If the service was not paused and thus resuming it makes no sense.
      - Throws: `DataCapturingError.isRunning`: If the service was running and thus resuming it makes no sense.
-     - Throws: `DataCapturingError.noCurrentMeasurement`: If no current measurement is available while resuming data capturing.
      */
     public func resume() throws {
         try lifecycleQueue.sync {
