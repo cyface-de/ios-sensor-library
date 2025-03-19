@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -40,51 +40,92 @@ public protocol BackgroundURLSessionEventDelegate {
  - Author: Klemens Muthmann
  */
 public class BackgroundUploadProcessBuilder {
-    // MARK: - Attributes
-    /// The registry of active upload session.
-    let sessionRegistry: SessionRegistry
-    /// The location of a Cyface collector server, used by the created ``UploadProcess`` to send data to.
-    let collectorUrl: URL
-    /// Factory to create ``Upload`` instances by the ``UploadProcess`` instances.
-    let uploadFactory: UploadFactory
-    /// Storage to keep session data of running uploads while this application is in suspended or killed.
-    let dataStoreStack: DataStoreStack
-    /// Used by the created ``UploadProcess`` to authenticate and authorize uploads with the Cyface data collector.
-    let authenticator: Authenticator
-    let sensorValueFileFactory: any SensorValueFileFactory
-    let backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
 
-    // MARK: - Initializers
-    public init(
+    func create(
         sessionRegistry: SessionRegistry,
         collectorUrl: URL,
-        uploadFactory: UploadFactory,
-        dataStoreStack: DataStoreStack,
-        authenticator: Authenticator,
-        sensorValueFileFactory: any SensorValueFileFactory,
-        backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
-    ) {
-        self.sessionRegistry = sessionRegistry
-        self.collectorUrl = collectorUrl
-        self.uploadFactory = uploadFactory
-        self.dataStoreStack = dataStoreStack
-        self.authenticator = authenticator
-        self.sensorValueFileFactory = sensorValueFileFactory
-        self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
-    }
-}
-
-extension BackgroundUploadProcessBuilder: UploadProcessBuilder {
-    public func build() -> UploadProcess {
-        return BackgroundUploadProcess(
-            builder: self,
+        uploadFactory: any UploadFactory,
+        authenticator: any Authenticator,
+        urlSession: URLSession
+    ) -> EventHandlerBuilder {
+        return InternalBackgroundProcessBuilder(
             sessionRegistry: sessionRegistry,
             collectorUrl: collectorUrl,
             uploadFactory: uploadFactory,
-            dataStoreStack: dataStoreStack,
             authenticator: authenticator,
-            sensorValueFileFactory: sensorValueFileFactory,
-            backgroundUrlSessionEventDelegate: backgroundUrlSessionEventDelegate
+            urlSession: urlSession
         )
+    }
+
+    public protocol DelegateBuilder {
+        func add(delegate: BackgroundProcessDelegate) -> BuildFunction
+    }
+
+    public protocol EventHandlerBuilder {
+        func add(handler: BackgroundEventHandler) -> DelegateBuilder
+    }
+
+    public protocol BuildFunction {
+        func build() -> UploadProcess
+    }
+
+    public class InternalBackgroundProcessBuilder:
+        BuildFunction,
+            DelegateBuilder,
+            EventHandlerBuilder {
+
+        // MARK: - Attributes
+        let urlSession: URLSession
+        /// The registry of active upload session.
+        let sessionRegistry: SessionRegistry
+        /// The location of a Cyface collector server, used by the created ``UploadProcess`` to send data to.
+        let collectorUrl: URL
+        /// Factory to create ``Upload`` instances by the ``UploadProcess`` instances.
+        let uploadFactory: UploadFactory
+        /// Storage to keep session data of running uploads while this application is in suspended or killed.
+        //let dataStoreStack: DataStoreStack
+        /// Used by the created ``UploadProcess`` to authenticate and authorize uploads with the Cyface data collector.
+        let authenticator: Authenticator
+        //let sensorValueFileFactory: any SensorValueFileFactory
+        //let backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
+        var delegate: BackgroundProcessDelegate?
+        var eventHandler: BackgroundEventHandler?
+
+        // MARK: - Initializers
+        init(
+            sessionRegistry: SessionRegistry,
+            collectorUrl: URL,
+            uploadFactory: UploadFactory,
+            authenticator: Authenticator,
+            urlSession: URLSession
+        ) {
+            self.sessionRegistry = sessionRegistry
+            self.collectorUrl = collectorUrl
+            self.uploadFactory = uploadFactory
+            self.authenticator = authenticator
+            self.urlSession = urlSession
+        }
+
+        public func add(handler: BackgroundEventHandler) -> any DelegateBuilder {
+            self.eventHandler = handler
+            return self
+        }
+
+        public func add(delegate: BackgroundProcessDelegate) -> any BuildFunction {
+            self.delegate = delegate
+            return self
+        }
+
+        public func build() -> UploadProcess {
+            return BackgroundUploadProcess(
+                sessionRegistry: sessionRegistry,
+                collectorUrl: collectorUrl,
+                uploadFactory: uploadFactory,
+                authenticator: authenticator,
+                urlSession: urlSession,
+                eventHandler: eventHandler!,
+                eventDelegate: delegate!
+            )
+        }
     }
 }
