@@ -25,7 +25,7 @@ import Combine
 
  - Author: Klemens Muthmann
  */
-class BackgroundUploadProcess: NSObject {
+public class BackgroundUploadProcess: NSObject {
     // MARK: - Properties
     /// A `URLSession` to use for sending requests and receiving responses, probably in the background.
     let discretionaryUrlSession: URLSession/* = {
@@ -57,7 +57,7 @@ class BackgroundUploadProcess: NSObject {
     /// Used to authenticate each request.
     let authenticator: Authenticator
     /// A *Combine* publisher to send information about the status of all the uploads.
-    let uploadStatus = PassthroughSubject<UploadStatus, Never>()
+    public let uploadStatus = PassthroughSubject<UploadStatus, Never>()
     /// Store processing of upload status functions as long as this object is alive.
     var uploadStatusCancellable: AnyCancellable?
 
@@ -99,7 +99,7 @@ class BackgroundUploadProcess: NSObject {
 
 // MARK: - Implementation of UploadProcess
 extension BackgroundUploadProcess: UploadProcess {
-    func upload(measurement: FinishedMeasurement) async throws -> any Upload {
+    public func upload(measurement: FinishedMeasurement) async throws -> any Upload {
         /// Check for an open session.
         if let upload = try sessionRegistry.get(measurement: measurement), upload.location != nil {
             /// If there is an open session continue by sending a status request
