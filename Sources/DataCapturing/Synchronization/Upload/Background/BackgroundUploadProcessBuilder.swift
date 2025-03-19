@@ -34,6 +34,18 @@ public protocol BackgroundURLSessionEventDelegate {
     func received(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void)
 }
 
+public protocol DelegateBuilder {
+    func add(delegate: BackgroundProcessDelegate) -> BuildFunction
+}
+
+public protocol EventHandlerBuilder {
+    func add(handler: BackgroundEventHandler) -> DelegateBuilder
+}
+
+public protocol BuildFunction {
+    func build() -> UploadProcess
+}
+
 /**
  A builder for ``BackgroundUploadProcess`` instances. Since each upload needs its own process. This builder allows to inject the creation into objects, that are synchronizing data to a Cyface data collector service.
 
@@ -55,18 +67,6 @@ public class BackgroundUploadProcessBuilder {
             authenticator: authenticator,
             urlSession: urlSession
         )
-    }
-
-    public protocol DelegateBuilder {
-        func add(delegate: BackgroundProcessDelegate) -> BuildFunction
-    }
-
-    public protocol EventHandlerBuilder {
-        func add(handler: BackgroundEventHandler) -> DelegateBuilder
-    }
-
-    public protocol BuildFunction {
-        func build() -> UploadProcess
     }
 
     public class InternalBackgroundProcessBuilder:
