@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -51,41 +51,4 @@ func rootPath() throws -> URL {
         .appendingPathComponent(measurementDirectory)
     try fileManager.createDirectory(at: measurementUrl, withIntermediateDirectories: true)
     return measurementUrl
-}
-
-/**
- Create the default ``SensorValueFile`` required by a recent Cyface Data Collector processing the Protobuf format and using the Google Media Upload Protocol.
-
- - Author: Klemens Muthmann
- */
-public struct DefaultSensorValueFileFactory: SensorValueFileFactory {
-    /// This factory is used to create files storing arrays of ``SensorValue``.
-    public typealias Serializable = [SensorValue]
-
-    /// This factory creates files that serialize data using a ``SensorValueSerializer``.
-    public typealias SpecificSerializer = SensorValueSerializer
-
-    /// This factory creates ``SensorValueFile``.
-    public typealias FileType = SensorValueFile
-
-    // MARK: - Properties
-    let rootPath: URL
-
-    // MARK: - Initializers
-    /// Create a new instance of this struct.
-    public init() throws {
-        rootPath = try DataCapturing.rootPath()
-    }
-
-    /// Create a new ``SensorValueFile``.
-    ///
-    /// - Parameter qualifier: Used to make the file unique and distinguishable from other files storing the same type of data. Usually this is the measurement identifier.
-    /// - Parameter fileType: The type of ``SensorValue`` to store.
-    public func create(fileType: SensorValueFileType, qualifier: String) throws -> SensorValueFile {
-        return try SensorValueFile(
-            rootPath: rootPath,
-            fileType: fileType,
-            qualifier: qualifier
-        )
-    }
 }
