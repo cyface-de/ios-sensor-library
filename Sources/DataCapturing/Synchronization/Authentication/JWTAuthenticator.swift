@@ -32,7 +32,7 @@ public struct JWTAuthenticator {
     let tokenProvider: () async throws -> String?
 
     /// Create a new instance with the provided method to receive the auth token.
-    init(_ tokenProvider: @escaping () async throws -> String?) {
+    public init(_ tokenProvider: @escaping () async throws -> String?) {
         self.tokenProvider = tokenProvider
     }
 }
