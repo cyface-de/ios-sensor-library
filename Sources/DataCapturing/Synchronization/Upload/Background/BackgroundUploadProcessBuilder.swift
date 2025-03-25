@@ -23,6 +23,8 @@ import UIKit
 /**
  Delegate receiving background URL session events.
 
+ An implementation of this class can be used to access the `completionHandler` usually stored in the `AppDelegate`, by making `AppDelegate` implement this interface.
+
  - Author: Klemens Muthmann
  */
 public protocol BackgroundURLSessionEventDelegate {
