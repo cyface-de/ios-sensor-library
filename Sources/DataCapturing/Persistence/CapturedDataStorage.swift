@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Cyface GmbH
+ * Copyright 2023-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -66,11 +66,10 @@ public class CapturedCoreDataStorage<SVFF: SensorValueFileFactory> where SVFF.Se
     /// The time interval to wait until the next batch of data is stored to the data storage. Increasing this time should improve performance but increases memory usage.
     let interval: TimeInterval
     /// The *Combine* cancellables used so new values are transmitted. References to this must be kept here, so that *Combine* does not stop the data flow.
-    var cancellables = [AnyCancellable]()
+    //var cancellables = [AnyCancellable]()
+    var messageStreamCancellable: AnyCancellable?
     /// Creator for storing sensor values to a file.
     let sensorValueFileFactory: SVFF
-    /// A Publisher of messages sent by the persistence layer on storage events.
-    let persistenceMessages = PassthroughSubject<Message, Never>()
 
     // MARK: - Initializers
     /**
@@ -107,7 +106,8 @@ public class CapturedCoreDataStorage<SVFF: SensorValueFileFactory> where SVFF.Se
         let messageHandler = try MessageHandler(fileFactory: sensorValueFileFactory, measurementIdentifier: measurementIdentifier, dataStoreStack: dataStoreStack)
 
         let cachedFlow = measurement.events.collect(.byTime(cachingQueue, 1.0))
-        cachedFlow.sink(receiveCompletion: { status in
+        messageStreamCancellable = cachedFlow.sink(receiveCompletion: { status in
+            os_log(.debug, log: .persistence, "CapturedCoreDataStorage: Received Finish Event")
             switch status {
             case .finished:
                 os_log(
@@ -127,7 +127,7 @@ public class CapturedCoreDataStorage<SVFF: SensorValueFileFactory> where SVFF.Se
             } catch {
                 os_log("Unable to store data! Error %{PUBLIC}@", log: OSLog.persistence, type: .error, error.localizedDescription)
             }
-        }.store(in: &cancellables)
+        }
     }
 }
 
@@ -146,7 +146,7 @@ extension CapturedCoreDataStorage: CapturedDataStorage {
     }
 
     public func unsubscribe() {
-        cancellables.removeAll(keepingCapacity: true)
+        messageStreamCancellable = nil
     }
 
     public func pausedMeasurement(
