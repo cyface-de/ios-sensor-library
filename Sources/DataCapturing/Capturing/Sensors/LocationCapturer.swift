@@ -72,7 +72,6 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
             manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
             manager.allowsBackgroundLocationUpdates = true
             manager.pausesLocationUpdatesAutomatically = false
-            manager.activityType = .other
             manager.showsBackgroundLocationIndicator = true
             manager.distanceFilter = kCLDistanceFilterNone
             return manager
