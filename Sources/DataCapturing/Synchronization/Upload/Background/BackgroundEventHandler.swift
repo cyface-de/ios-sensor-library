@@ -19,6 +19,14 @@
 import OSLog
 import Combine
 
+/**
+ This class is responsible for processing server responses from the Cyface Data Collector service.
+
+ The reason for the existence of this class is that these events must be handled in both the ``BackgroundUploadProcess`` and the ``BackgroundEventHandler``.
+ To avoid code duplication, both objects share an instance of this class.
+
+ - Author: Klemens Muthmann
+ */
 public class BackgroundEventHandler {
 
     // MARK: - Properties
