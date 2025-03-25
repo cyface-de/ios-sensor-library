@@ -17,7 +17,6 @@
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import Foundation
 import UIKit
 
 /**
@@ -33,17 +32,39 @@ public protocol BackgroundURLSessionEventDelegate {
     /// For additional information please refer to the [Apple documentation](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background).
     var completionHandler: (() -> Void)? { get set }
 
+    /// Implement the code called when a `URLSession` is woken up.
     func received(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void)
 }
 
+/**
+ One step from the ``BackgroundUploadProcessBuilder``.
+
+ Add a ``BackgroundProcessDelegate`` to the ``BackgroundUploadProcess``.
+
+ - Author: Klemens Muthmann
+ */
 public protocol DelegateBuilder {
     func add(delegate: BackgroundProcessDelegate) -> BuildFunction
 }
 
+/**
+ One step from the ``BackgroundUploadProcessBuilder``.
+
+ Add a ``BackgroundEventHandler`` to the ``BackgroundUploadProcess``.
+
+ - Author: Klemens Muthmann
+ */
 public protocol EventHandlerBuilder {
     func add(handler: BackgroundEventHandler) -> DelegateBuilder
 }
 
+/**
+ One step from the ``BackgroundUploadProcessBuilder``.
+
+ Finally create the ``UploadProcess`` from this builder.
+
+ - Author: Klemens Muthmann
+ */
 public protocol BuildFunction {
     func build() -> UploadProcess
 }
@@ -55,6 +76,16 @@ public protocol BuildFunction {
  */
 public class BackgroundUploadProcessBuilder {
 
+    /**
+     Create the builder from the provided parameters.
+
+     - Parameters:
+        - sessionRegistry: The ``SessionRegistry`` storing the currently active upload sessions.
+        - collectorUrl: The location of a Cyface data collector server, to send the data to.
+        - uploadFactory: A factory to create new uploads.
+        - authenticator: Provide authentication information to send authenticated requests via the `urlSession`.
+        - urlSession: A `URLSession` to use for sending requests and receiving responses, probably in the background.
+     */
     public static func create(
         sessionRegistry: SessionRegistry,
         collectorUrl: URL,
@@ -71,12 +102,20 @@ public class BackgroundUploadProcessBuilder {
         )
     }
 
+    /**
+     Internal class implementing all the types required by the builder.
+
+     Making this an internal class prevents callers from viewing the complete structure of the builder.
+
+     - Author: Klemens Muthmann
+     */
     public class InternalBackgroundProcessBuilder:
         BuildFunction,
             DelegateBuilder,
             EventHandlerBuilder {
 
         // MARK: - Attributes
+        /// A `URLSession` to use for sending requests and receiving responses, probably in the background.
         let urlSession: URLSession
         /// The registry of active upload session.
         let sessionRegistry: SessionRegistry
@@ -84,13 +123,11 @@ public class BackgroundUploadProcessBuilder {
         let collectorUrl: URL
         /// Factory to create ``Upload`` instances by the ``UploadProcess`` instances.
         let uploadFactory: UploadFactory
-        /// Storage to keep session data of running uploads while this application is in suspended or killed.
-        //let dataStoreStack: DataStoreStack
         /// Used by the created ``UploadProcess`` to authenticate and authorize uploads with the Cyface data collector.
         let authenticator: Authenticator
-        //let sensorValueFileFactory: any SensorValueFileFactory
-        //let backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
+        /// An implementation of all the delegates required by a background `URLSession`.
         var delegate: BackgroundProcessDelegate?
+        /// Handler for events occuring when a request has finished.
         var eventHandler: BackgroundEventHandler?
 
         // MARK: - Initializers

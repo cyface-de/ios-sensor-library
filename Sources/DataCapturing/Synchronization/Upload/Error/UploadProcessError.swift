@@ -17,6 +17,12 @@
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ Errors occuring during the ``UploadProcess``.
+
+ - Author: Klemens Muthmann
+ */
 public enum UploadProcessError: Error {
+    /// Initialization was wrong. You need to provide a valid `URLSession` before calling any methods on an `UploadProcess`.
     case missingUrlSession
 }

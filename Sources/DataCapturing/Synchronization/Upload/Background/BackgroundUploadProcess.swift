@@ -28,44 +28,35 @@ import Combine
 public class BackgroundUploadProcess: NSObject {
     // MARK: - Properties
     /// A `URLSession` to use for sending requests and receiving responses, probably in the background.
-    let discretionaryUrlSession: URLSession/* = {
-        let config = URLSessionConfiguration.background(withIdentifier: DefaultUploadProcess.discretionaryUrlSessionIdentifier)
-        //Determines the maximum number of simulataneous connections to a Host. This is a per session property.
-        config.httpMaximumConnectionsPerHost = 1
-        // This controles whether you are allowed to continue your upload/download over cellular access.
-        config.allowsCellularAccess = false
-        // This makes sure you get an event on your app session launch (in your AppDelegate). (Your app might be killed by system even if your upload/download is going on)
-        config.sessionSendsLaunchEvents = true
-        // This tells the system to wait for connectivity and then resume uploading/downloading. If the network goes away, it will restart from 0.
-        // This is ignored by background sessions always waiting for connectivity
-        config.waitsForConnectivity = true
-        // Only transmit during convenient times
-        config.isDiscretionary = true
-
-        return URLSession(configuration: config, delegate: eventDelegate, delegateQueue: nil)
-    }()*/
-    /// The `UploadProcessBuilder` that created this `UploadProcess`.
-    //let builder: BackgroundUploadProcessBuilder
+    let discretionaryUrlSession: URLSession
     /// The ``SessionRegistry`` storing the currently active upload sessions.
     var sessionRegistry: SessionRegistry
     /// The location of a Cyface data collector server, to send the data to.
     let collectorUrl: URL
-    /// A factory to create
+    /// A factory to create new uploads.
     let uploadFactory: UploadFactory
-    
-    //let dataStoreStack: DataStoreStack
     /// Used to authenticate each request.
     let authenticator: Authenticator
     /// A *Combine* publisher to send information about the status of all the uploads.
     public let uploadStatus = PassthroughSubject<UploadStatus, Never>()
     /// Store processing of upload status functions as long as this object is alive.
     var uploadStatusCancellable: AnyCancellable?
-
+    /// Handler for events occuring when a request has finished.
     let eventHandler: BackgroundEventHandler
+    /// An implementation of all the delegates required by a background `URLSession`.
     let eventDelegate: BackgroundProcessDelegate
 
     // MARK: - Initializers
-    /// Create a new complete instance of this class.
+    /// Create a new complete instance of this class with the provided parameters.
+    ///
+    /// - Parameters:
+    ///     - sessionRegistry: The ``SessionRegistry`` storing the currently active upload sessions.
+    ///     - collectorUrl: The location of a Cyface data collector server, to send the data to.
+    ///     - uploadFactory: A factory to create new uploads.
+    ///     - authenticator: Used to authenticate each request.
+    ///     - urlSession: A `URLSession` to use for sending requests and receiving responses, probably in the background.
+    ///     - eventHandler: Handler for events occuring when a request has finished.
+    ///     - eventDelegate: An implementation of all the delegates required by a background `URLSession`.
     init(
         sessionRegistry: SessionRegistry,
         collectorUrl: URL,

@@ -26,6 +26,7 @@ public enum UploadError: Error {
     /// Thrown if the managed object loaded from the database is currently a fault.
     /// This usually means that managed object was accessed at the wrong time or from the wrong thread.
     case faultError
+    /// The `measurement` was not in the database.
     case notAvailable(measurement: FinishedMeasurement)
     /// Thrown if the database is in an inconsistent state.
     case inconsistentState

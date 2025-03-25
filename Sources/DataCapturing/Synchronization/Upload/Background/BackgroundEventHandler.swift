@@ -30,13 +30,25 @@ import Combine
 public class BackgroundEventHandler {
 
     // MARK: - Properties
+    /// Remembers sessions started but not finished yet.
     var sessionRegistry: SessionRegistry
+    /// Send information about changes to the status of uploads to interested parties.
     let messageBus: any Subject<UploadStatus, Never>
+    /// The `URLSession` to use for communication over the network. This should be a discretionary `URLSession` to ensure uploads only happen on a connected WiFi.
     public var discretionaryUrlSession: URLSession?
+    /// Provide authentication information to send authenticated requests via the `discretionaryUrlSession`.
     let authenticator: Authenticator
+    /// The URL to a Cyface Data Collector Service, receiving all requests from this handler.
     let collectorUrl: URL
 
     // MARK: - Initializers
+    /// Initialize a new handler with the provided parameters as described below.
+    ///
+    /// - Parameters:
+    ///     - sessionRegistry: Remembers sessions started but not finished yet.
+    ///     - messageBus: Send information about changes to the status of uploads to interested parties.
+    ///     - authenticator: Provide authentication information to send authenticated requests via the `discretionaryUrlSession`.
+    ///     - collectorUrl: The URL to a Cyface Data Collector Service, receiving all requests from this handler.
     public init(
         sessionRegistry: SessionRegistry,
         messageBus: any Subject<UploadStatus, Never>,

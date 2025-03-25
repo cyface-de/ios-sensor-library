@@ -21,18 +21,40 @@ import Foundation
 import OSLog
 import Combine
 
+/**
+ Implement all delegates required for a background `URLSession` for a Cyface ``BackgroundUploadProcess``.
+
+ - Author: Klemens Muthmann
+ */
 public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, URLSessionTaskDelegate {
 
     // MARK: - Properties
     /// The connection to the data store, to persist data between putting the app into the background.
     let dataStoreStack: DataStoreStack
+    /// Store values to an appropriate file for later background uploads.
     let sensorValueFileFactory: any SensorValueFileFactory
+    /// Manage currently open upload sessions.
     var sessionRegistry: SessionRegistry
+    /// Send updates about the current state of uploads to interested partys.
     let messageBus: any Subject<UploadStatus, Never>
+    /// Handle events on network responses.
     let eventHandler: BackgroundEventHandler
+    /// The delegate containing the `completionHandler` provided by the system.
+    /// This is often the `AppDelegate`.
     var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
 
     // MARK: - Initializers
+    /**
+     Initialize a new object of this class with the provided paramters.
+
+     - Parameters:
+        - dataStoreStack: The connection to the data store, to persist data between putting the app into the background.
+        - sensorValueFileFactory: Store values to an appropriate file for later background uploads.
+        - sessionRegistry: Manage currently open upload sessions.
+        -  messageBus: Send updates about the current state of uploads to interested partys.
+        - eventHandler: Handle events on network responses.
+        - backgroundURLSessionEventDelegate: The delegate containing the `completionHandler` provided by the system. This is often the `AppDelegate`.
+     */
     public init(
         dataStoreStack: DataStoreStack,
         sensorValueFileFactory: any SensorValueFileFactory,

@@ -97,5 +97,6 @@ class MockUpload: Upload {
 
     func onFailed(cause: any Error) throws {
         failures.append(cause)
+        wasSuccessful = false
     }
 }
