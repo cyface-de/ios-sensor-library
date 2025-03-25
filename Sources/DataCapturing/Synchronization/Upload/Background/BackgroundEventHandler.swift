@@ -24,7 +24,7 @@ public class BackgroundEventHandler {
     // MARK: - Properties
     var sessionRegistry: SessionRegistry
     let messageBus: any Subject<UploadStatus, Never>
-    let discretionaryUrlSession: URLSession
+    public var discretionaryUrlSession: URLSession?
     let authenticator: Authenticator
     let collectorUrl: URL
 
@@ -32,13 +32,11 @@ public class BackgroundEventHandler {
     public init(
         sessionRegistry: SessionRegistry,
         messageBus: any Subject<UploadStatus, Never>,
-        discretionaryUrlSession: URLSession,
         authenticator: Authenticator,
         collectorUrl: URL
     ) {
         self.sessionRegistry = sessionRegistry
         self.messageBus = messageBus
-        self.discretionaryUrlSession = discretionaryUrlSession
         self.authenticator = authenticator
         self.collectorUrl = collectorUrl
     }
@@ -46,6 +44,10 @@ public class BackgroundEventHandler {
     // MARK: - Methods
     /// Handle the response to a Google Media Upload status request.
     func onReceivedStatusRequest(httpStatusCode: Int16, upload: any Upload) async throws {
+        guard let discretionaryUrlSession = self.discretionaryUrlSession else {
+            throw UploadProcessError.missingUrlSession
+        }
+
         switch httpStatusCode {
         case 200: // Upload abgeschlossen. Ignorieren
             os_log("200", log: OSLog.synchronization, type: .debug)
@@ -95,6 +97,10 @@ public class BackgroundEventHandler {
 
     /// Handle the response to a Google Media Upload Protocol pre request.
     func onReceivedPreRequest(httpStatusCode: Int16, upload: any Upload) async throws {
+        guard let discretionaryUrlSession = discretionaryUrlSession else {
+            throw UploadProcessError.missingUrlSession
+        }
+
         deletePreRequestData(for: upload.measurement)
         switch httpStatusCode {
         case 200: // Send Upload Request
