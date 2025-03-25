@@ -46,8 +46,6 @@ public struct DefaultUploadProcess {
     public let uploadStatus = PassthroughSubject<UploadStatus, Never>()
     /// Used to authenticate with the data collector service.
     let authenticator: Authenticator
-    // MARK: - Static Properties
-    public static let discretionaryUrlSessionIdentifier = "de.cyface.urlsession.discretionary"
 
     // MARK: - Methods
     /// Called after a status request on an open session returned successfully.
