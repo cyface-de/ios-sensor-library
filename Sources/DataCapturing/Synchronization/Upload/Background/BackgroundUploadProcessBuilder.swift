@@ -53,7 +53,7 @@ public protocol BuildFunction {
  */
 public class BackgroundUploadProcessBuilder {
 
-    func create(
+    public static func create(
         sessionRegistry: SessionRegistry,
         collectorUrl: URL,
         uploadFactory: any UploadFactory,
