@@ -143,6 +143,7 @@ extension SmartphoneLocationCapturer: CLLocationManagerDelegate {
      - didUpdateLocation: An array of the updated locations.
      */
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        os_log(.debug, log: .capturing, "New locations %@", locations)
         lifecycleQueue.sync {
             locations.filter { checkUpdateTime(location: $0) == .onTime }.forEach {
                 messagePublisher.send(
