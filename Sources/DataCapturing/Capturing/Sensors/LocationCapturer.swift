@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Cyface GmbH
+ * Copyright 2023-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -72,7 +72,6 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
             manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
             manager.allowsBackgroundLocationUpdates = true
             manager.pausesLocationUpdatesAutomatically = false
-            manager.activityType = .other
             manager.showsBackgroundLocationIndicator = true
             manager.distanceFilter = kCLDistanceFilterNone
             return manager
@@ -146,6 +145,7 @@ extension SmartphoneLocationCapturer: CLLocationManagerDelegate {
      - didUpdateLocation: An array of the updated locations.
      */
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        os_log(.debug, log: .capturing, "New locations %@", locations)
         lifecycleQueue.sync {
             locations.filter { checkUpdateTime(location: $0) == .onTime }.forEach {
                 messagePublisher.send(

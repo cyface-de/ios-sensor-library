@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 Cyface GmbH
+ * Copyright 2019-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -23,8 +23,6 @@ import Foundation
 An `Authenticator` provides functionality to authenticate this app on a servoer for receiving the captured data.
 
  - Author: Klemens Muthmann
- - Version: 2.0.0
- - Since: 2.0.0
  */
 public protocol Authenticator {
 
@@ -47,8 +45,6 @@ public protocol Authenticator {
  Errors thrown from `Authenticator` instances.
 
  - Author: Klemens Muthmann
- - Version: 1.0.0
- - Since: 12.0.0
  */
 public enum AuthenticationError: Error {
     /// Thrown if an authenticator does not provide a certain way of authentication.
