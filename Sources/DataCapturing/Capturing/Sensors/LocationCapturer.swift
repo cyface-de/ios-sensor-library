@@ -101,7 +101,6 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     public func stop() {
         self.coreLocationManager.stopUpdatingLocation()
         coreLocationManager.locationDelegate = nil
-        messagePublisher.send(completion: .finished)
         os_log(.info, log: .capturing, "LocationCapturer: Stopping Location Capturer")
     }
 
