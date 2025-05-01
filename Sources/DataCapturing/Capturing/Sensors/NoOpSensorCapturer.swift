@@ -29,6 +29,10 @@ import OSLog
 public class NoOpSensorCapturer: SensorCapturer {
     private var messagePublisher: PassthroughSubject<Message, Never>?
 
+    public init() {
+        // Nothing to do here, but we need a public initializer.
+    }
+
     public func start() -> AnyPublisher<Message, Never> {
         let messagePublisher = PassthroughSubject<Message, Never>()
         self.messagePublisher = messagePublisher
@@ -43,6 +47,4 @@ public class NoOpSensorCapturer: SensorCapturer {
         }
         os_log(.info, log: .sensor, "Stopping NoOpSensorCapturer!")
     }
-    
-    
 }
