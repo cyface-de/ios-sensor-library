@@ -37,7 +37,7 @@ class UploadRequest {
     }
 
     /// Send the request for the provided `upload`.
-    func request(authToken: String, upload: any Upload, continueOnByte: Int = 0) async throws -> any Upload {
+    func request(authToken: String, upload: any Upload) async throws -> any Upload {
         os_log("Uploading measurement %{public}d to %{public}@.", log: log, type: .debug, upload.measurement.identifier, upload.location?.absoluteString ?? "Location Missing!")
         let metaData = try upload.metaData()
         let data = try upload.data()
@@ -47,6 +47,7 @@ class UploadRequest {
         }
 
         // Background uploads are only valid from files, so writing the data to a file at first.
+        let continueOnByte = upload.bytesUploaded
         let tempDataFile = try copyToTemp(data: data[continueOnByte..<data.count], filename: url.lastPathComponent)
 
         var request = URLRequest(url: url)

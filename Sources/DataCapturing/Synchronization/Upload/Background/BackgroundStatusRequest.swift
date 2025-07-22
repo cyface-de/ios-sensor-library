@@ -27,7 +27,7 @@ import Foundation
 
  - Author: Klemens Muthmann
  */
-struct BackgroundStatusRequest {
+struct BackgroundStatusRequest: CyfaceServerRequest {
     // MARK: - Properties
     /// The iOS `URLSession` used to upload data to the Data collector server.
     let session: URLSession
@@ -42,7 +42,7 @@ struct BackgroundStatusRequest {
 
      - Throws: `ServerConnectionError.invalidUploadLocation` if the provided `sessionIdentifier` is invalid.
      */
-    func send() throws {
+    func send() throws -> URLSessionTask {
         guard let requestLocation = upload.location else {
             throw ServerConnectionError.invalidUploadLocation("Missing Location")
         }
@@ -76,5 +76,7 @@ struct BackgroundStatusRequest {
         statusRequestTesk.countOfBytesClientExpectsToReceive = 50 + minimumBytesInAnHTTPResponse
         statusRequestTesk.taskDescription = "STATUS:\(upload.measurement.identifier)"
         statusRequestTesk.resume()
+
+        return statusRequestTesk
     }
 }

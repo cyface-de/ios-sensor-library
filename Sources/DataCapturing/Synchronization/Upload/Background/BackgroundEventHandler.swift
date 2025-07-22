@@ -75,7 +75,6 @@ public class BackgroundEventHandler {
             messageBus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
 
         case 308: // Upload fortsetzen
-            // TODO: Header zum Fortsetzen setzen
             os_log("308", log: OSLog.synchronization, type: .debug)
             try sessionRegistry.record(
                 upload: upload,
