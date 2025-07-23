@@ -61,7 +61,7 @@ public class BackgroundUploadProcess: NSObject {
         collectorUrl: URL,
         uploadFactory: UploadFactory,
         authenticator: Authenticator,
-        urlSession: URLSession,
+        urlSession: URLSession
     ) {
         self.sessionRegistry = sessionRegistry
         self.collectorUrl = collectorUrl
