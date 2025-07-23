@@ -123,7 +123,7 @@ public class BackgroundUploadProcessBuilder {
                 collectorUrl: collectorUrl,
                 uploadFactory: uploadFactory,
                 authenticator: authenticator,
-                urlSession: urlSession,
+                urlSession: urlSession
             )
         }
     }
