@@ -40,6 +40,8 @@ public class BackgroundEventHandler {
     let authenticator: Authenticator
     /// The URL to a Cyface Data Collector Service, receiving all requests from this handler.
     let collectorUrl: URL
+    /// Stores the most recent upload task, to avoid the Swift system canceling the upload.
+    private var currentUploadTask: URLSessionTask? = nil
 
     // MARK: - Initializers
     /// Initialize a new handler with the provided parameters as described below.
@@ -86,7 +88,7 @@ public class BackgroundEventHandler {
                 session: discretionaryUrlSession,
                 upload: upload
             )
-            try uploadRequest.send()
+            currentUploadTask = try uploadRequest.send()
 
         case 404: // Upload neu starten
             os_log("404", log: OSLog.synchronization, type: .debug)
@@ -103,7 +105,7 @@ public class BackgroundEventHandler {
                 upload: upload,
                 authToken: try await authenticator.authenticate()
             )
-            try preRequest.send()
+            self.currentUploadTask = try preRequest.send()
 
         default:
             os_log("Error: %{PUBLIC}d", log: OSLog.synchronization, type: .debug, httpStatusCode)
@@ -136,7 +138,7 @@ public class BackgroundEventHandler {
                 session: discretionaryUrlSession,
                 upload: upload
             )
-            try uploadRequest.send()
+            self.currentUploadTask = try uploadRequest.send()
         case 401: // Authentication was not successful. Retry later
             os_log("401", log: OSLog.synchronization, type: .error)
             try sessionRegistry.record(
