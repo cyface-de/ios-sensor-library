@@ -133,6 +133,8 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                 switch responseType {
                 case "STATUS":
                     os_log("STATUS: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
+
+                    upload.bytesUploaded = try bytesUploaded(response: response)
                     try await eventHandler.onReceivedStatusRequest(
                         httpStatusCode: Int16(response.statusCode),
                         upload: upload
@@ -154,6 +156,8 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                     )
                 case "UPLOAD":
                     os_log("UPLOAD", log: OSLog.synchronization, type: .debug)
+                    upload.bytesUploaded = try bytesUploaded(response: response)
+
                     try eventHandler.onReceivedUploadResponse(
                         httpStatusCode: Int16(response.statusCode),
                         upload: upload
@@ -177,6 +181,28 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         } else {
             return .upload
         }
+    }
+
+    /**
+     Calculates the number of bytes uploaded by the request producing the `response`.
+
+     For this to work the response must contain the "Range"-header with a value in the form "bytes=0-XXX", where XXX is the actual value of bytes uploaded.
+     If no such header is found or the format is not correct, this function throws an Exception.
+     */
+    private func bytesUploaded(response: HTTPURLResponse) throws -> Int {
+        guard let rangeHeader = (response.allHeaderFields["Range"] as? String) else {
+            throw UploadProcessError.missingRangeHeader
+        }
+
+        guard let range = rangeHeader.range(of: "bytes=0-") else {
+            throw UploadProcessError.invalidRangeHeaderValue
+        }
+
+        guard let bytesUploaded = Int(rangeHeader[range.upperBound...]) else {
+            throw UploadProcessError.uploadedBytesUnparseable
+        }
+
+        return bytesUploaded
     }
 
     // TODO: Move this to a place where it actually gets called.

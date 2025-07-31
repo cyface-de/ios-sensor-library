@@ -39,28 +39,6 @@ public protocol BackgroundURLSessionEventDelegate {
 /**
  One step from the ``BackgroundUploadProcessBuilder``.
 
- Add a ``BackgroundProcessDelegate`` to the ``BackgroundUploadProcess``.
-
- - Author: Klemens Muthmann
- */
-public protocol DelegateBuilder {
-    func add(delegate: BackgroundProcessDelegate) -> BuildFunction
-}
-
-/**
- One step from the ``BackgroundUploadProcessBuilder``.
-
- Add a ``BackgroundEventHandler`` to the ``BackgroundUploadProcess``.
-
- - Author: Klemens Muthmann
- */
-public protocol EventHandlerBuilder {
-    func add(handler: BackgroundEventHandler) -> DelegateBuilder
-}
-
-/**
- One step from the ``BackgroundUploadProcessBuilder``.
-
  Finally create the ``UploadProcess`` from this builder.
 
  - Author: Klemens Muthmann
@@ -92,7 +70,7 @@ public class BackgroundUploadProcessBuilder {
         uploadFactory: any UploadFactory,
         authenticator: any Authenticator,
         urlSession: URLSession
-    ) -> EventHandlerBuilder {
+    ) -> BuildFunction {
         return InternalBackgroundProcessBuilder(
             sessionRegistry: sessionRegistry,
             collectorUrl: collectorUrl,
@@ -110,9 +88,7 @@ public class BackgroundUploadProcessBuilder {
      - Author: Klemens Muthmann
      */
     public class InternalBackgroundProcessBuilder:
-        BuildFunction,
-            DelegateBuilder,
-            EventHandlerBuilder {
+        BuildFunction {
 
         // MARK: - Attributes
         /// A `URLSession` to use for sending requests and receiving responses, probably in the background.
@@ -125,10 +101,6 @@ public class BackgroundUploadProcessBuilder {
         let uploadFactory: UploadFactory
         /// Used by the created ``UploadProcess`` to authenticate and authorize uploads with the Cyface data collector.
         let authenticator: Authenticator
-        /// An implementation of all the delegates required by a background `URLSession`.
-        var delegate: BackgroundProcessDelegate?
-        /// Handler for events occuring when a request has finished.
-        var eventHandler: BackgroundEventHandler?
 
         // MARK: - Initializers
         init(
@@ -145,25 +117,13 @@ public class BackgroundUploadProcessBuilder {
             self.urlSession = urlSession
         }
 
-        public func add(handler: BackgroundEventHandler) -> any DelegateBuilder {
-            self.eventHandler = handler
-            return self
-        }
-
-        public func add(delegate: BackgroundProcessDelegate) -> any BuildFunction {
-            self.delegate = delegate
-            return self
-        }
-
         public func build() -> UploadProcess {
             return BackgroundUploadProcess(
                 sessionRegistry: sessionRegistry,
                 collectorUrl: collectorUrl,
                 uploadFactory: uploadFactory,
                 authenticator: authenticator,
-                urlSession: urlSession,
-                eventHandler: eventHandler!,
-                eventDelegate: delegate!
+                urlSession: urlSession
             )
         }
     }

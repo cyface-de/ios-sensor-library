@@ -26,3 +26,11 @@ jobs:
       #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
     - name: Build & Test
       run: xcodebuild clean test -scheme "DataCapturing" -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO
+
+    - name: Archive Test Log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-log
+        path: /Users/runner/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+

@@ -27,11 +27,13 @@ import Foundation
 public protocol Upload: Equatable {
     // MARK: - Properties
     /// A list of failures caused by this upload, if any.
-    var failures: [Error] {get}
+    var failures: [Error] { get }
     /// The ``FinishedMeasurement`` to upload.
     var measurement: FinishedMeasurement { get }
     /// The location to send the data to or `nil` if no location was requested from the server yet.
-    var location: URL? {get set}
+    var location: URL? { get set }
+    /// Return the number of bytes already uploaded. This is used to resume a previously interrupted upload.
+    var bytesUploaded: Int { get set }
 
     // MARK: - Methods
     /// Provide the upload meta data of the measurement to upload.
@@ -57,6 +59,7 @@ public class CoreDataBackedUpload: Upload {
     public var failures: [Error]
     /// The location of the active session for this upload or `nil` if no successful pre request has been send and received yet.
     public var location: URL?
+    public var bytesUploaded: Int = 0
     // MARK: - Internal Properties
     /// A wrapper for the `NSPersistentContainer` and the corresponding initialization code.
     var dataStoreStack: DataStoreStack

@@ -43,6 +43,7 @@ class MockUpload: Upload {
     /// An optionally empty location to store the upload at.
     var location: URL?
     var failures: [any Error]
+    var bytesUploaded: Int = 0
 
     // MARK: - Initializers
     /// Initialize this class with a simulated measurement identifier.
@@ -56,15 +57,15 @@ class MockUpload: Upload {
     /// Provide non sense test meta data about this upload.
     func metaData() throws -> MetaData {
         let ret = MetaData(
-            locationCount: 3,
-            formatVersion: 2,
-            startLocLat: 1.0,
-            startLocLon: 1.0,
-            startLocTS: Date(timeIntervalSince1970: 10_000),
-            endLocLat: 1.0,
-            endLocLon: 1.0,
-            endLocTS: Date(timeIntervalSince1970: 10_100),
-            measurementId: 1,
+            locationCount: UInt64(measurement.tracks.map{$0.locations.count}.reduce(into: 0) { $0 += $1 }),
+            formatVersion: 3,
+            startLocLat: measurement.tracks.first?.locations.first?.latitude,
+            startLocLon: measurement.tracks.first?.locations.first?.longitude,
+            startLocTS: measurement.tracks.first?.locations.first?.time,
+            endLocLat: measurement.tracks.last?.locations.last?.latitude,
+            endLocLon: measurement.tracks.last?.locations.last?.longitude,
+            endLocTS: measurement.tracks.last?.locations.last?.time,
+            measurementId: measurement.identifier,
             osVersion: "ios12",
             applicationVersion: "10.0.0",
             length: 10.0,

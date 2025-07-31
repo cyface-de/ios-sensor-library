@@ -16,8 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
-
-import OSLog
+import Foundation
 import Combine
 
 /**
@@ -41,10 +40,11 @@ public class BackgroundUploadProcess: NSObject {
     public let uploadStatus = PassthroughSubject<UploadStatus, Never>()
     /// Store processing of upload status functions as long as this object is alive.
     var uploadStatusCancellable: AnyCancellable?
-    /// Handler for events occuring when a request has finished.
-    let eventHandler: BackgroundEventHandler
-    /// An implementation of all the delegates required by a background `URLSession`.
-    let eventDelegate: BackgroundProcessDelegate
+    /// Store the most recent request. This is necessary for iOS to not remove the reference aborting the request in the process.
+    ///
+    /// For a full implementation each and every task should be stored in its own variable. But since we do the requests only sequential,
+    /// storing only the most recent should be sufficient.
+    var activeRequestTask: URLSessionTask?
 
     // MARK: - Initializers
     /// Create a new complete instance of this class with the provided parameters.
@@ -56,23 +56,18 @@ public class BackgroundUploadProcess: NSObject {
     ///     - authenticator: Used to authenticate each request.
     ///     - urlSession: A `URLSession` to use for sending requests and receiving responses, probably in the background.
     ///     - eventHandler: Handler for events occuring when a request has finished.
-    ///     - eventDelegate: An implementation of all the delegates required by a background `URLSession`.
     init(
         sessionRegistry: SessionRegistry,
         collectorUrl: URL,
         uploadFactory: UploadFactory,
         authenticator: Authenticator,
-        urlSession: URLSession,
-        eventHandler: BackgroundEventHandler,
-        eventDelegate: BackgroundProcessDelegate
+        urlSession: URLSession
     ) {
         self.sessionRegistry = sessionRegistry
         self.collectorUrl = collectorUrl
         self.uploadFactory = uploadFactory
         self.authenticator = authenticator
         self.discretionaryUrlSession = urlSession
-        self.eventHandler = eventHandler
-        self.eventDelegate = eventDelegate
         super.init()
 
         uploadStatusCancellable = uploadStatus.sink { status in
@@ -100,7 +95,7 @@ extension BackgroundUploadProcess: UploadProcess {
                 authToken: try await authenticator.authenticate(),
                 upload: upload
             )
-            try statusRequest.send()
+            self.activeRequestTask = try statusRequest.send()
             /// If the status request was successful continue by sending an upload starting at the byte given by the status request
             /// If the status request was not successful contnue with a pre request
             return upload
@@ -115,7 +110,7 @@ extension BackgroundUploadProcess: UploadProcess {
                 upload: upload,
                 authToken: try await authenticator.authenticate()
             )
-            try preRequest.send()
+            self.activeRequestTask = try preRequest.send()
             /// If the pre request was successful create a session and start uploading the data
             /// If the upload request completes see if another chunk is due to be uploaded
             /// If yes than start the upload for the next chunk

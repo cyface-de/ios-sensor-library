@@ -27,7 +27,7 @@ import Foundation
 
  - Author: Klemens Muthmann
  */
-struct BackgroundPreRequest {
+struct BackgroundPreRequest: CyfaceServerRequest {
     /// The location of a Cyface data collector service to send the request to.
     let collectorUrl: URL
     /// An iOS `URLSession` used to communicate with the server.
@@ -43,7 +43,7 @@ struct BackgroundPreRequest {
     ///
     /// The operation system decides when to actually send it.
     /// Depending on the provided session this will be instantaeous or happens if connected to a WiFi and a plug.
-    func send() throws {
+    func send() throws -> URLSessionTask {
         let metaData = try upload.metaData()
         let data = try upload.data()
         let httpMethod = "POST"
@@ -80,5 +80,7 @@ struct BackgroundPreRequest {
 
         preRequestTask.taskDescription = "PREREQUEST:\(upload.measurement.identifier)"
         preRequestTask.resume()
+        
+        return preRequestTask
     }
 }

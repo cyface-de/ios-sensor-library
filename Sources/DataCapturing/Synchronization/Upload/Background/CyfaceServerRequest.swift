@@ -16,19 +16,14 @@
  * You should have received a copy of the GNU General Public License
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
+import Foundation
 
 /**
- Errors occuring during the ``UploadProcess``.
-
- - Author: Klemens Muthmann
+ Base protocol for all requests issued during data upload, via the Cyface Upload Protocol.
  */
-public enum UploadProcessError: Error {
-    /// Initialization was wrong. You need to provide a valid `URLSession` before calling any methods on an `UploadProcess`.
-    case missingUrlSession
-    /// Received a response and tried to find out which bytes had been uploaded but the range header was missing.
-    case missingRangeHeader
-    /// Tried to parse a range header in an HTTP response but it contained an unparseable value.
-    case invalidRangeHeaderValue
-    /// Parsed a range header but could not convert the uploadedBytes value to a 64 Bit Integer.
-    case uploadedBytesUnparseable
+protocol CyfaceServerRequest {
+    /// Provide the `UploadTask` used for the request.
+    ///
+    /// You need to store this reference as long as the upload runs, or it will be discarded.
+    func send() throws -> URLSessionTask
 }
