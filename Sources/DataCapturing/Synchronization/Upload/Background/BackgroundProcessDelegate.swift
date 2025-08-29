@@ -39,10 +39,9 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
     let messageBus: any Subject<UploadStatus, Never>
     /// Handle events on network responses.
     let eventHandler: BackgroundEventHandler
-    // TODO: This should probably be a weak reference.
     /// The delegate containing the `completionHandler` provided by the system.
     /// This is often the `AppDelegate`.
-    var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
+    weak var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate?
 
     // MARK: - Initializers
     /**
@@ -69,7 +68,6 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         self.sessionRegistry = sessionRegistry
         self.messageBus = messageBus
         self.eventHandler = eventHandler
-        // TODO: Make this reference weak
         self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
         super.init()
         os_log("✅ BackgroundProcessDelegate wurde INITIALISIERT.", log: OSLog.default, type: .debug)
@@ -98,8 +96,8 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
 
         defer {
             DispatchQueue.main.async { [weak self] in
-                if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
-                    self?.backgroundUrlSessionEventDelegate.completionHandler = nil
+                if let completionHandler = self?.backgroundUrlSessionEventDelegate?.completionHandler {
+                    self?.backgroundUrlSessionEventDelegate?.completionHandler = nil
                     completionHandler()
                 }
             }
@@ -207,8 +205,8 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         os_log("Sync - URLSession did finish events", log: OSLog.synchronization, type: .debug)
         defer {
             DispatchQueue.main.async { [weak self] in
-                if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
-                    self?.backgroundUrlSessionEventDelegate.completionHandler = nil
+                if let completionHandler = self?.backgroundUrlSessionEventDelegate?.completionHandler {
+                    self?.backgroundUrlSessionEventDelegate?.completionHandler = nil
                     completionHandler()
                 }
             }
