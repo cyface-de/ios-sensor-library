@@ -31,4 +31,6 @@ public enum UploadProcessError: Error {
     case invalidRangeHeaderValue
     /// Parsed a range header but could not convert the uploadedBytes value to a 64 Bit Integer.
     case uploadedBytesUnparseable
+    /// An `Upload` did not contain location information when it was expected.
+    case missingLocation
 }

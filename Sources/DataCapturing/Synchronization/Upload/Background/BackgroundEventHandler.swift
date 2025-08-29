@@ -42,6 +42,7 @@ public class BackgroundEventHandler {
     let collectorUrl: URL
     /// Stores the most recent upload task, to avoid the Swift system canceling the upload.
     private var currentUploadTask: URLSessionTask? = nil
+    private let storage = BackgroundPayloadStorage()
 
     // MARK: - Initializers
     /// Initialize a new handler with the provided parameters as described below.
@@ -122,7 +123,7 @@ public class BackgroundEventHandler {
             throw UploadProcessError.missingUrlSession
         }
 
-        deletePreRequestData(for: upload.measurement)
+        storage.cleanPreRequest(upload: upload)
         switch httpStatusCode {
         case 200: // Send Upload Request
             os_log("200", log: OSLog.synchronization, type: .debug)
@@ -182,6 +183,8 @@ public class BackgroundEventHandler {
 
     /// Handle the response to a Google Media Upload Protocol upload request.
     func onReceivedUploadResponse(httpStatusCode: Int16, upload: any Upload) throws {
+        storage.cleanUpload(upload: upload)
+
         switch httpStatusCode {
         case 201:
             os_log("201", log: OSLog.synchronization, type: .debug)
@@ -199,16 +202,6 @@ public class BackgroundEventHandler {
             try sessionRegistry.record(upload: upload, .upload, httpStatusCode: httpStatusCode, error: error)
             messageBus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
             throw error
-        }
-    }
-
-    /// Delete the file containing MetaData for a PreRequest from the temporary file location.
-    private func deletePreRequestData(for measurement: FinishedMeasurement) {
-        let target = FileManager.default.temporaryDirectory.appendingPathComponent("\(measurement.identifier)")
-        do {
-            try FileManager.default.removeItem(at: target)
-        } catch {
-            os_log("Failed to delete pre-request data for %{PUBLIC}d: %{PUBLIC}@", log: OSLog.synchronization, type: .error, measurement.identifier, target.absoluteString)
         }
     }
 }

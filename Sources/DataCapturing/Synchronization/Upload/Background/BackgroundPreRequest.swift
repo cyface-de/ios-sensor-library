@@ -38,6 +38,8 @@ struct BackgroundPreRequest: CyfaceServerRequest {
     let authToken: String
     /// Encoder to write the meta data as JSON into the requests body.
     let jsonEncoder = JSONEncoder()
+    /// Responsible for creating temporary file names to store data for background uploads.
+    private let storage = BackgroundPayloadStorage()
 
     /// Schedule sending this request.
     ///
@@ -61,7 +63,7 @@ struct BackgroundPreRequest: CyfaceServerRequest {
         request.httpMethod = httpMethod
 
         let jsonData = try jsonEncoder.encode(metaData)
-        let file = try saveToDocuments(data: jsonData, with: "\(upload.measurement.identifier)")
+        let file = try storage.storePreRequest(data: jsonData, for: upload)
         print("Creating PreRequest with token \(authToken)")
         let preRequestTask = session.uploadTask(with: request, fromFile: file)
         preRequestTask.countOfBytesClientExpectsToSend = headerBytes(request) + Int64(httpMethod.lengthOfBytes(using: .utf8)) + Int64(jsonData.count)
