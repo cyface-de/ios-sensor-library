@@ -1,29 +1,42 @@
-//
-//  TemporaryFileNameBuilder.swift
-//  DataCapturing
-//
-//  Created by Klemens Muthmann on 29.08.25.
-//
+/*
+ * Copyright 2025 Cyface GmbH
+ *
+ * This file is part of the Cyface SDK for iOS.
+ *
+ * The Cyface SDK for iOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The Cyface SDK for iOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
+ */
+import Foundation
 
 class BackgroundPayloadStorage {
 
-    func storePreRequest(data: Data, for upload: Upload) throws {
-        return saveToDocuments(data: data, with: upload.measurement.identifier)
+    func storePreRequest(data: Data, for upload: any Upload) throws -> URL {
+        return try saveToDocuments(data: data, with: String(upload.measurement.identifier))
     }
 
-    func storeUpload(data: Data, for upload: Upload) throws {
+    func storeUpload(data: Data, for upload: any Upload) throws -> URL {
         guard let filename = upload.location?.lastPathComponent else {
             throw UploadProcessError.missingLocation
         }
 
-        return saveToDocuments(data: data, with: filename)
+        return try saveToDocuments(data: data, with: filename)
     }
 
-    func cleanPreRequest(upload: Upload) throws -> String {
-        try deleteFromDocuments(with: upload.measurement.identifier)
+    func cleanPreRequest(upload: any Upload) throws {
+        try deleteFromDocuments(with: String(upload.measurement.identifier))
     }
 
-    func cleanUpload(upload: Upload) throws -> String {
+    func cleanUpload(upload: any Upload) throws {
         guard let filename = upload.location?.lastPathComponent else {
             throw UploadProcessError.missingLocation
         }

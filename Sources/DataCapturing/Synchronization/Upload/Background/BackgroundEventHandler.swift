@@ -123,7 +123,7 @@ public class BackgroundEventHandler {
             throw UploadProcessError.missingUrlSession
         }
 
-        storage.cleanPreRequest(upload: upload)
+        try storage.cleanPreRequest(upload: upload)
         switch httpStatusCode {
         case 200: // Send Upload Request
             os_log("200", log: OSLog.synchronization, type: .debug)
@@ -183,7 +183,7 @@ public class BackgroundEventHandler {
 
     /// Handle the response to a Google Media Upload Protocol upload request.
     func onReceivedUploadResponse(httpStatusCode: Int16, upload: any Upload) throws {
-        storage.cleanUpload(upload: upload)
+        try storage.cleanUpload(upload: upload)
 
         switch httpStatusCode {
         case 201:

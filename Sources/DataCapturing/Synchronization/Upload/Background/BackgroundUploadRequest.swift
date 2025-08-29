@@ -35,7 +35,7 @@ struct BackgroundUploadRequest: CyfaceServerRequest {
     let log: OSLog = OSLog(subsystem: "UploadRequest", category: "de.cyface")
     /// The ``Upload`` to send to the Cyface Collector Server.
     var upload: any Upload
-    let storage: BackgroundPayloadStorage
+    let storage = BackgroundPayloadStorage()
 
     /// Send the request for the provided `upload`.
     func send() throws -> URLSessionTask {
@@ -52,7 +52,7 @@ struct BackgroundUploadRequest: CyfaceServerRequest {
         let uploadToByte = data.count
 
         let dataToUpload = data[continueOnByte..<uploadToByte]
-        let tempDataFile = storage.storeUpload(data: dataToUpload, for: upload)
+        let tempDataFile = try storage.storeUpload(data: dataToUpload, for: upload)
 
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
