@@ -39,6 +39,7 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
     let messageBus: any Subject<UploadStatus, Never>
     /// Handle events on network responses.
     let eventHandler: BackgroundEventHandler
+    // TODO: This should probably be a weak reference.
     /// The delegate containing the `completionHandler` provided by the system.
     /// This is often the `AppDelegate`.
     var backgroundUrlSessionEventDelegate: BackgroundURLSessionEventDelegate
@@ -68,28 +69,55 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         self.sessionRegistry = sessionRegistry
         self.messageBus = messageBus
         self.eventHandler = eventHandler
+        // TODO: Make this reference weak
         self.backgroundUrlSessionEventDelegate = backgroundUrlSessionEventDelegate
+        super.init()
+        os_log("✅ BackgroundProcessDelegate wurde INITIALISIERT.", log: OSLog.default, type: .debug)
+    }
+
+    deinit {
+        os_log("❌ BackgroundProcessDelegate wird ZERSTÖRT (deinit).", log: OSLog.default, type: .error)
     }
 
     // MARK: - Methods
+
+    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        os_log("Sync - Session datatask did receive completionhandler.", log: OSLog.synchronization, type: .debug)
+    }
+
+    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        os_log("Sync - Session datatask did receive.", log: OSLog.synchronization, type: .debug)
+    }
+
     /// Called by the system after an upload has finished. This can be called after the app was killed in the background.
     ///
     /// To recreate the upload from the serialized storage, the `URLSessionTask` description contains the `measurementIdentifier`, the system did try to upload with this request.
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        os_log("Sync - Request Session complete!", log: OSLog.synchronization, type: .debug)
+
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
+                    self?.backgroundUrlSessionEventDelegate.completionHandler = nil
+                    completionHandler()
+                }
+            }
+        }
 
         guard let description = task.taskDescription else {
-            os_log("Upload - No task description aborting upload!", log: OSLog.synchronization, type: .error)
-            fatalError("Upload - Wrong call to urlSession. Did not contain a taskDescription!")
+            os_log("Sync - No task description aborting upload!", log: OSLog.synchronization, type: .error)
+            fatalError("Sync - Wrong call to urlSession. Did not contain a taskDescription!")
         }
-        os_log("Upload described as %{PUBLIC}@!", log: OSLog.synchronization, type: .debug, description)
+        os_log("Sync - Response described as %{PUBLIC}@!", log: OSLog.synchronization, type: .debug, description)
         let descriptionPieces = description.split(separator: ":")
         guard descriptionPieces.count == 2 else {
-            os_log("Upload - Invalid task description %@.", log: OSLog.synchronization, type: .error, description)
-            fatalError("Upload - Task Description was not parseable!")
+            os_log("Sync - Invalid task description %@.", log: OSLog.synchronization, type: .error, description)
+            fatalError("Sync - Task Description was not parseable!")
         }
         let responseType = descriptionPieces[0]
         guard let measurementIdentifier = UInt64(descriptionPieces[1]) else {
-            fatalError("Upload - Task Description did not contain a valid measurement identifier!")
+            fatalError("Sync - Task Description did not contain a valid measurement identifier!")
         }
 
         let measurement = try! dataStoreStack.wrapInContextReturn { context in
@@ -104,30 +132,30 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
 
         Task {
             guard var upload = try! sessionRegistry.get(measurement: measurement) else {
-                os_log("Upload - No session registered for Measurement %d!", measurementIdentifier)
+                os_log("Sync - No session registered for Measurement %d!", measurementIdentifier)
                 return
             }
 
             guard let response = task.response as? HTTPURLResponse else {
-                os_log("Upload response not received!", log: OSLog.synchronization, type: .error)
+                os_log("Sync - Response not received!", log: OSLog.synchronization, type: .error)
                 messageBus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
                 return
             }
-            os_log("Upload response received!", log: OSLog.synchronization, type: .debug)
+            os_log("Sync - HTTP response received with Status Code %{PUBLIC}d!", log: OSLog.synchronization, type: .debug, response.statusCode)
 
             if let error = error {
-                os_log("Upload Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
+                os_log("Sync - Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
                 messageBus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
                 return
             }
-            os_log("Upload was successful!", log: OSLog.synchronization, type: .debug)
+            os_log("Sync - Request processed successfully!", log: OSLog.synchronization, type: .debug)
 
             guard let url = response.url else {
-                os_log("Upload - No URL returned from response!", log: OSLog.synchronization, type: .error)
+                os_log("Sync - No URL returned from response!", log: OSLog.synchronization, type: .error)
                 messageBus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
                 return
             }
-            os_log("Upload targeted URL: %{PUBLiC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
+            os_log("Sync targeted URL: %{PUBLiC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
 
             do {
                 switch responseType {
@@ -142,9 +170,10 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                 case "PREREQUEST":
                     os_log("PREREQUEST: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
                     guard let locationValue = response.value(forHTTPHeaderField: "Location") else {
+                        os_log("Sync - PreRequest is missing upload location!")
                         throw ServerConnectionError.noLocation
                     }
-                    os_log("Upload - Received PreRequest to %@", log: OSLog.synchronization, type: .debug, locationValue)
+                    os_log("Sync - Received PreRequest to %@", log: OSLog.synchronization, type: .debug, locationValue)
                     guard let locationUrl = URL(string: locationValue) else {
                         throw ServerConnectionError.invalidUploadLocation(locationValue)
                     }
@@ -169,6 +198,19 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                 try sessionRegistry.record(upload: upload, from(text: String(responseType)), httpStatusCode: Int16(response.statusCode), error: error)
                 messageBus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
                 os_log("%{PUBLIC}d", log: OSLog.synchronization, type: .error, error.localizedDescription)
+            }
+        }
+    }
+
+    /// This method seems to never be called, but if removed the delegate does not work any longer. Therefore this method should never be deleted.
+    public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        os_log("Sync - URLSession did finish events", log: OSLog.synchronization, type: .debug)
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
+                    self?.backgroundUrlSessionEventDelegate.completionHandler = nil
+                    completionHandler()
+                }
             }
         }
     }
@@ -203,16 +245,5 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         }
 
         return bytesUploaded
-    }
-
-    // TODO: Move this to a place where it actually gets called.
-    @objc(URLSessionDidFinishEventsForBackgroundURLSession:) public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        os_log("Finished background session", log: OSLog.synchronization, type: .info)
-        DispatchQueue.main.async { [weak self] in
-            if let completionHandler = self?.backgroundUrlSessionEventDelegate.completionHandler {
-                self?.backgroundUrlSessionEventDelegate.completionHandler = nil
-                completionHandler()
-            }
-        }
     }
 }
