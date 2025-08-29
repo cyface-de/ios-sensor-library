@@ -61,7 +61,7 @@ struct BackgroundPreRequest: CyfaceServerRequest {
         request.httpMethod = httpMethod
 
         let jsonData = try jsonEncoder.encode(metaData)
-        let file = try copyToTemp(data: jsonData, filename: "\(upload.measurement.identifier)")
+        let file = try saveToDocuments(data: jsonData, with: "\(upload.measurement.identifier)")
         print("Creating PreRequest with token \(authToken)")
         let preRequestTask = session.uploadTask(with: request, fromFile: file)
         preRequestTask.countOfBytesClientExpectsToSend = headerBytes(request) + Int64(httpMethod.lengthOfBytes(using: .utf8)) + Int64(jsonData.count)
