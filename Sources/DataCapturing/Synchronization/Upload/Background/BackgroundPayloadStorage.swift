@@ -18,12 +18,15 @@
  */
 import Foundation
 
+/// A class wrapping a few functions necessary to store HTTP data on disk for background uploads.
 class BackgroundPayloadStorage {
 
+    /// Store data produced for a pre request.
     func storePreRequest(data: Data, for upload: any Upload) throws -> URL {
         return try saveToDocuments(data: data, with: String(upload.measurement.identifier))
     }
 
+    /// Store data produced for an Upload.
     func storeUpload(data: Data, for upload: any Upload) throws -> URL {
         guard let filename = upload.location?.lastPathComponent else {
             throw UploadProcessError.missingLocation
@@ -32,6 +35,7 @@ class BackgroundPayloadStorage {
         return try saveToDocuments(data: data, with: filename)
     }
 
+    /// delete data stored for a pre request.
     func cleanPreRequest(upload: any Upload) throws {
         try deleteFromDocuments(with: String(upload.measurement.identifier))
     }
@@ -45,13 +49,13 @@ class BackgroundPayloadStorage {
     }
 
     /**
-     Speichert gegebene Daten in einer Datei im Documents-Verzeichnis der App.
+     Saves given data to a file in the app's Documents directory.
 
      - Parameters:
-       - data: Das `Data`-Objekt, das gespeichert werden soll.
-       - filename: Der Name für die zu erstellende Datei (z.B. "upload-123.json").
-     - Throws: Wirft einen Fehler, wenn das Documents-Verzeichnis nicht gefunden oder die Datei nicht geschrieben werden kann.
-     - Returns: Die `URL` zur neu erstellten Datei.
+        - data: The `Data` object to be saved.
+        - filename: The name for the file to be created (e.g., "upload-123.json").
+     - Throws: Throws an error if the Documents directory cannot be found or the file cannot be written.
+     - Returns: The `URL` to the newly created file.
     */
     private func saveToDocuments(data: Data, with filename: String) throws -> URL {
         // 1. Find the URL to the users documents directory
@@ -72,6 +76,7 @@ class BackgroundPayloadStorage {
         return fileURL
     }
 
+    /// Delete the file with the provided filename from the apps sandbox documents directory.
     private func deleteFromDocuments(with filename: String) throws {
         guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             throw NSError(domain: "de.cyface.fileerror", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents-Directory not found."])
