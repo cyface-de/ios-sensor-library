@@ -16,16 +16,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
     - name: Swift Version
       run: swift -version
    # - name: Build
    #   run: swift build -Xswiftc "-sdk" -Xswiftc "`xcrun --sdk iphonesimulator --show-sdk-path`" -Xswiftc "-target" -Xswiftc "x86_64-apple-ios14.0-simulator"
       #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing SYMROOT="./build" build
-   # - name: Run tests
-   #   run: swift test -q
-      #run: xcodebuild -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1" -scheme DataCapturing test
     - name: Build & Test
-      run: xcodebuild clean test -scheme "DataCapturing" -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO
+      run: xcodebuild clean test -scheme "DataCapturing" -destination "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO
 
     - name: Archive Test Log
       uses: actions/upload-artifact@v4
