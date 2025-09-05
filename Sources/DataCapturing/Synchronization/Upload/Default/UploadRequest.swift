@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Cyface GmbH
+ * Copyright 2022-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -30,6 +30,7 @@ class UploadRequest {
     let session: URLSession
     /// The logger used by objects of this class.
     let log: OSLog = OSLog(subsystem: "UploadRequest", category: "de.cyface")
+    private let storage = BackgroundPayloadStorage()
 
     /// Initialize the request using the provided Alamofire `Session` for execution.
     init(session: URLSession) {
@@ -48,7 +49,7 @@ class UploadRequest {
 
         // Background uploads are only valid from files, so writing the data to a file at first.
         let continueOnByte = upload.bytesUploaded
-        let tempDataFile = try copyToTemp(data: data[continueOnByte..<data.count], filename: url.lastPathComponent)
+        let tempDataFile = try storage.storeUpload(data: data[continueOnByte..<data.count], for: upload)
 
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"

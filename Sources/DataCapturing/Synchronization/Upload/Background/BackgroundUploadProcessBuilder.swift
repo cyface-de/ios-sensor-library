@@ -26,7 +26,7 @@ import UIKit
 
  - Author: Klemens Muthmann
  */
-public protocol BackgroundURLSessionEventDelegate {
+public protocol BackgroundURLSessionEventDelegate: AnyObject {
     /// Central place to store the bakcground session completion handler.
     ///
     /// For additional information please refer to the [Apple documentation](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background).

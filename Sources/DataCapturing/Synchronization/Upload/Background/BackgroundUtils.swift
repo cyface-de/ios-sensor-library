@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -31,19 +31,4 @@ func headerBytes(_ request: URLRequest) -> Int64 {
     } else {
         return 0
     }
-}
-
-/// Copy the provided data to a temporary file with the provided `filename`.
-///
-/// This is used to store data for background uploads, as they are only valid from files.
-func copyToTemp(data: Data, filename: String) throws -> URL {
-    // It is ok to store this to temporary storage, since iOS takes control of the file as soon as we hand it to the
-    // upload task. This means premature removal of the file does not stop the output.
-    // See: https://livefront.com/writing/uploading-data-in-the-background-in-ios/
-    let target = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-    if FileManager.default.fileExists(atPath: target.relativePath) {
-        try FileManager.default.removeItem(at: target)
-    }
-    try data.write(to: target)
-    return target
 }
