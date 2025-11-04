@@ -64,9 +64,9 @@ public class BackgroundEventHandler {
         self.collectorUrl = collectorUrl
     }
 
-    // MARK: - Methods
+    // MARK: - Public Methods
     /// Handle the response to a Google Media Upload status request.
-    func onReceivedStatusRequest(httpStatusCode: Int16, upload: any Upload) async throws {
+    func onReceivedStatusRequest(httpStatusCode: Int16, headers: [AnyHashable: Any], upload: inout any Upload) async throws {
         guard let discretionaryUrlSession = self.discretionaryUrlSession else {
             throw UploadProcessError.missingUrlSession
         }
@@ -79,6 +79,7 @@ public class BackgroundEventHandler {
 
         case 308: // Upload fortsetzen
             os_log("308", log: OSLog.synchronization, type: .debug)
+            upload.bytesUploaded = try bytesUploaded(headers: headers)
             try sessionRegistry.record(
                 upload: upload,
                 RequestType.status,
@@ -182,7 +183,7 @@ public class BackgroundEventHandler {
     }
 
     /// Handle the response to a Google Media Upload Protocol upload request.
-    func onReceivedUploadResponse(httpStatusCode: Int16, upload: any Upload) throws {
+    func onReceivedUploadResponse(httpStatusCode: Int16, headers: [AnyHashable: Any], upload: inout any Upload) throws {
         try storage.cleanUpload(upload: upload)
 
         switch httpStatusCode {
@@ -196,6 +197,17 @@ public class BackgroundEventHandler {
                 time: Date.now
             )
             messageBus.send(UploadStatus(upload: upload, status: .finishedSuccessfully))
+        case 308:
+            os_log("308", log: OSLog.synchronization, type: .debug)
+            upload.bytesUploaded = try bytesUploaded(headers: headers)
+            try sessionRegistry.record(
+                upload: upload,
+                    .upload, httpStatusCode:
+                    httpStatusCode,
+                message: "RESUME INCOMPLETE",
+                time: Date.now
+            )
+            messageBus.send(UploadStatus(upload: upload, status: .finishedUnsuccessfully))
         default:
             os_log("Error: %{PUBLIC}d", log: OSLog.synchronization, type: .error, httpStatusCode)
             let error = ServerConnectionError.requestFailed(httpStatusCode: Int(httpStatusCode))
@@ -203,5 +215,28 @@ public class BackgroundEventHandler {
             messageBus.send(UploadStatus(upload: upload, status: .finishedWithError(cause: error)))
             throw error
         }
+    }
+
+    // MARK: - Private Methods
+    /**
+     Calculates the number of bytes uploaded by the request producing the `response`.
+
+     For this to work the response must contain the "Range"-header with a value in the form "bytes=0-XXX", where XXX is the actual value of bytes uploaded.
+     If no such header is found or the format is not correct, this function throws an Exception.
+     */
+    private func bytesUploaded(headers: [AnyHashable: Any]) throws -> Int {
+        guard let rangeHeader = (headers["Range"] as? String) else {
+            throw UploadProcessError.missingRangeHeader
+        }
+
+        guard let range = rangeHeader.range(of: "bytes=0-") else {
+            throw UploadProcessError.invalidRangeHeaderValue
+        }
+
+        guard let bytesUploaded = Int(rangeHeader[range.upperBound...]) else {
+            throw UploadProcessError.uploadedBytesUnparseable
+        }
+
+        return bytesUploaded
     }
 }
