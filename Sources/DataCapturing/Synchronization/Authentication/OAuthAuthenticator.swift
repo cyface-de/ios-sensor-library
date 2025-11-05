@@ -17,7 +17,7 @@
  * along with the Cyface SDK for iOS. If not, see <http://www.gnu.org/licenses/>.
  */
 import Foundation
-import AppAuth
+@preconcurrency import AppAuth
 import OSLog
 
 /**
@@ -187,6 +187,7 @@ public class OAuthAuthenticator {
     /// Used to write a new state and make sure, that state is also saved to persistent storage, so the state survives if the system kills the app.
     private func authState(from state: OIDAuthState?) throws {
         self._authState = state
+        self.idToken = state?.lastTokenResponse?.idToken
         try saveState(state, authStateKey)
     }
 
