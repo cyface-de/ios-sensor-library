@@ -160,10 +160,10 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                 case "STATUS":
                     os_log("STATUS: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
 
-                    upload.bytesUploaded = try bytesUploaded(response: response)
                     try await eventHandler.onReceivedStatusRequest(
                         httpStatusCode: Int16(response.statusCode),
-                        upload: upload
+                        headers: response.allHeaderFields,
+                        upload: &upload
                     )
                 case "PREREQUEST":
                     os_log("PREREQUEST: %{PUBLIC}@", log: OSLog.synchronization, type: .debug, url.absoluteString)
@@ -183,11 +183,11 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
                     )
                 case "UPLOAD":
                     os_log("UPLOAD", log: OSLog.synchronization, type: .debug)
-                    upload.bytesUploaded = try bytesUploaded(response: response)
 
                     try eventHandler.onReceivedUploadResponse(
                         httpStatusCode: Int16(response.statusCode),
-                        upload: upload
+                        headers: response.allHeaderFields,
+                        upload: &upload
                     )
                 default:
                     os_log("%{PUBLIC}@", log: OSLog.synchronization, type: .debug, description)
@@ -203,12 +203,10 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
     /// This method seems to never be called, but if removed the delegate does not work any longer. Therefore this method should never be deleted.
     public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         os_log("Sync - URLSession did finish events", log: OSLog.synchronization, type: .debug)
-        defer {
-            DispatchQueue.main.async { [weak self] in
-                if let completionHandler = self?.backgroundUrlSessionEventDelegate?.completionHandler {
-                    self?.backgroundUrlSessionEventDelegate?.completionHandler = nil
-                    completionHandler()
-                }
+        DispatchQueue.main.async { [weak self] in
+            if let completionHandler = self?.backgroundUrlSessionEventDelegate?.completionHandler {
+                self?.backgroundUrlSessionEventDelegate?.completionHandler = nil
+                completionHandler()
             }
         }
     }
@@ -221,27 +219,5 @@ public class BackgroundProcessDelegate: NSObject, URLSessionDelegate, URLSession
         } else {
             return .upload
         }
-    }
-
-    /**
-     Calculates the number of bytes uploaded by the request producing the `response`.
-
-     For this to work the response must contain the "Range"-header with a value in the form "bytes=0-XXX", where XXX is the actual value of bytes uploaded.
-     If no such header is found or the format is not correct, this function throws an Exception.
-     */
-    private func bytesUploaded(response: HTTPURLResponse) throws -> Int {
-        guard let rangeHeader = (response.allHeaderFields["Range"] as? String) else {
-            throw UploadProcessError.missingRangeHeader
-        }
-
-        guard let range = rangeHeader.range(of: "bytes=0-") else {
-            throw UploadProcessError.invalidRangeHeaderValue
-        }
-
-        guard let bytesUploaded = Int(rangeHeader[range.upperBound...]) else {
-            throw UploadProcessError.uploadedBytesUnparseable
-        }
-
-        return bytesUploaded
     }
 }

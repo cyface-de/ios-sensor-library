@@ -21,8 +21,6 @@ import Foundation
 
 /**
 An `Authenticator` provides functionality to authenticate this app on a servoer for receiving the captured data.
-
- - Author: Klemens Muthmann
  */
 public protocol Authenticator {
 
@@ -39,34 +37,4 @@ public protocol Authenticator {
     ///
     /// @param url: The deep link URL used to call this.
     func callback(url: URL)
-}
-
-/**
- Errors thrown from `Authenticator` instances.
-
- - Author: Klemens Muthmann
- */
-public enum AuthenticationError: Error {
-    /// Thrown if an authenticator does not provide a certain way of authentication.
-    case notImplemented
-    /// General error during authentication.
-    case unableToAuthenticate
-}
-
-extension AuthenticationError: LocalizedError {
-    public var errorDescription: String? {
-        return switch self {
-        case .notImplemented:
-            NSLocalizedString(
-                "de.cyface.datacapturing.error.authenticationerror.notimplemented",
-                value: "This function has not been implemented.",
-                comment: "Communicate that a function was called that was not implemented. This should not happen in production."
-            )
-        case .unableToAuthenticate:
-            NSLocalizedString(
-                "de.cyface.datacapturing.error.authenticationerror.unabletoauthenticate",
-                comment: "Tell the user that authentication failed. They should check their credentials, check their connection or try again later."
-            )
-        }
-    }
 }

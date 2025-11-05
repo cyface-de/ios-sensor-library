@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2024 Cyface GmbH
+ * Copyright 2018-2025 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -26,12 +26,7 @@ import Foundation
  case notPaused
  case isRunning
  case notRunning
- case noCurrentMeasurement
  ````
-
- - Author: Klemens Muthmann
- - Since: 1.2.0
- - Version: 1.2.0
  */
 public enum MeasurementError: Error {
     /// Thrown if the service was paused when it should not have been.
@@ -42,8 +37,31 @@ public enum MeasurementError: Error {
     case isRunning
     /// Thrown if the service was not running when it should have been.
     case notRunning
-    /// For some reason there was no current measurement to write data to or to read information to, during a capturing run. This can already happen during start up, if the current measurement was not created for some reason.
-    case noCurrentMeasurement
-    /// The requested track does not exist
-    case invalidTrack
+}
+
+extension MeasurementError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .isPaused:
+            return NSLocalizedString(
+                "de.cyface.datacapturing.error.measurementerror.ispaused",
+                comment: "Encountered a paused measurement where none should be!"
+            )
+        case .notPaused:
+            return NSLocalizedString(
+                "de.cyface.datacapturing.error.measurementerror.notpaused",
+                comment: "The current measurement was not paused but it should have been!"
+            )
+        case .isRunning:
+            return NSLocalizedString(
+                "de.cyface.datacapturing.error.measurementerror.isrunning",
+                comment: "The current measurement is running but it should not have been!"
+            )
+        case .notRunning:
+            return NSLocalizedString(
+                "de.cyface.datacapturing.error.measurementerror.notrunning",
+                comment: "The current measurement is not running, but it should!"
+            )
+        }
+    }
 }
