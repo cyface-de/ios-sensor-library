@@ -23,28 +23,27 @@ class BackgroundPayloadStorage {
 
     /// Store data produced for a pre request.
     func storePreRequest(data: Data, for upload: any Upload) throws -> URL {
-        return try saveToDocuments(data: data, with: String(upload.measurement.identifier))
+        let filename = "prerequest-\(upload.measurement.identifier).json"
+        return try saveToDocuments(data: data, with: filename)
     }
 
     /// Store data produced for an Upload.
-    func storeUpload(data: Data, for upload: any Upload) throws -> URL {
-        guard let filename = upload.location?.lastPathComponent else {
-            throw UploadProcessError.missingLocation
-        }
-
+   func storeUpload(data: Data, for upload: any Upload) throws -> URL {
+        // Use measurement identifier for the filename, just like storePreRequest
+        let filename = "upload-\(upload.measurement.identifier).bin"
         return try saveToDocuments(data: data, with: filename)
     }
 
     /// delete data stored for a pre request.
     func cleanPreRequest(upload: any Upload) throws {
-        try deleteFromDocuments(with: String(upload.measurement.identifier))
+        let filename = "prerequest-\(upload.measurement.identifier).json"
+        try deleteFromDocuments(with: filename)
     }
 
+    /// Delete the uploaded data file for the given upload.
     func cleanUpload(upload: any Upload) throws {
-        guard let filename = upload.location?.lastPathComponent else {
-            throw UploadProcessError.missingLocation
-        }
-
+        // Use the same filename pattern as storeUpload
+        let filename = "upload-\(upload.measurement.identifier).bin"
         try deleteFromDocuments(with: filename)
     }
 
