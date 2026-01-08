@@ -234,6 +234,8 @@ struct MessageHandler<SVFF: SensorValueFileFactory> where SVFF.Serializable == [
                     measurementMo.addToEvents(EventMO(event: Event(time: time, type: .lifecyclePause), context: context))
                 case .stopped(timestamp: let time):
                     try self.onStop(measurement: measurementMo, context, time)
+                case .modalityChanged(to: let modality):
+                    measurementMo.addToEvents(EventMO(event: Event(time: Date.now, type: .modalityTypeChange, value: modality), context: context))
                 default:
                     os_log("Message %{PUBLIC}@ irrelevant for data storage and thus ignored.",log: OSLog.persistence, type: .debug, message.description)
                 }
