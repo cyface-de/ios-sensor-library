@@ -39,6 +39,14 @@ public class OAuthAuthenticator {
     // MARK: - Properties
     /// The `UIViewController` to call after the login process in the embedded browser window has finished.
     public var callbackController: UIViewController? = nil
+    /// `true` if the authenticator is logged in; `false` otherwise.
+    public var isLoggedIn: Bool {
+        if let authState = _authState {
+            return authState.isAuthorized
+        } else {
+            return false
+        }
+    }
     /// The internal AppAuth auth state.
     /// This is the central place from the framework, where auth information is stored.
     private var _authState: OIDAuthState?
