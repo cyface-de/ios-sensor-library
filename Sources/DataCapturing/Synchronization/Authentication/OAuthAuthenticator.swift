@@ -96,6 +96,7 @@ public class OAuthAuthenticator {
             self.authStateKey = OAuthAuthenticator.appAuthStateKey
         }
         self._authState = try? loadState(self.authStateKey)
+        self.idToken = self._authState?.lastTokenResponse?.idToken
     }
 
     // MARK: - Methods
@@ -287,7 +288,6 @@ extension OAuthAuthenticator: Authenticator {
                                 continuation.resume(throwing: error)
                             }
                         } else if let accessToken = accessToken {
-                            self.idToken = idToken
                             try self.authState(from: authState)
                             continuation.resume(returning: accessToken)
                         } else {
@@ -372,8 +372,7 @@ extension OAuthAuthenticator: Authenticator {
     public func logout() async throws {
         os_log("Authentication: Logging Out", log: OSLog.authorization, type: .debug)
         guard let idToken = self.idToken else {
-            // TODO: Throw proper Exception here.
-            fatalError()
+            throw OAuthAuthenticatorError.tokenMissing
         }
 
         let request = await OIDEndSessionRequest(
