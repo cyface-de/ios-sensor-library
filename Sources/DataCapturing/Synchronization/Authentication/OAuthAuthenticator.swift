@@ -49,7 +49,11 @@ public class OAuthAuthenticator {
     }
     /// The internal AppAuth auth state.
     /// This is the central place from the framework, where auth information is stored.
-    private var _authState: OIDAuthState?
+    private var _authState: OIDAuthState? {
+        didSet {
+            self.idToken = _authState?.lastTokenResponse?.idToken
+        }
+    }
     /// A key to serialize the current authentication state. If `nil` a default value will be used.
     private var authStateKey: String
     /// The issuer is the identity provider used to authenticate with a Ready for Robots account. Ready for Robots uses Keycloak as identity provider.
@@ -70,7 +74,7 @@ public class OAuthAuthenticator {
     private var config: OIDServiceConfiguration?
     /// The current identity token, containing information about the authenticated user.
     /// [Siehe](https://auth0.com/blog/id-token-access-token-what-is-the-difference/)
-    private var idToken: String?
+    public var idToken: String?
 
     // MARK: - Initializers
     /// Creates a new `OAuthAuthenticator` initialized for using a specific identity provider.
@@ -132,7 +136,7 @@ public class OAuthAuthenticator {
         let redirectUri = redirectUri
         let config = try await serviceDiscovery()
 
-        try await withUnsafeThrowingContinuation { continuation in
+        let (newAuthState, authorizationFlow): (OIDAuthState, OIDExternalUserAgentSession) = try await withCheckedThrowingContinuation { continuation in
             // Build Authentication Request
             let request = OIDAuthorizationRequest(
                 configuration: config,
@@ -145,26 +149,24 @@ public class OAuthAuthenticator {
             )
             DispatchQueue.main.async {
                 os_log("Authentication: Authorization Endpoint: %@", log: OSLog.authorization, type: .debug, config.authorizationEndpoint.absoluteString)
-                let currentAuthorizationFlow = OIDAuthState.authState(
+                // capturedFlow is assigned synchronously before the callback can fire,
+                // so it is guaranteed to be non-nil when the callback runs.
+                var capturedFlow: OIDExternalUserAgentSession?
+                capturedFlow = OIDAuthState.authState(
                     byPresenting: request,
                     presenting: callbackWindow
                 ) { authState, error in
                     os_log("Authentication: Received authentication response: %@", log: OSLog.authorization, type: .debug, authState ?? "nil")
-                    if let authState = authState {
-                        self.idToken = authState.lastTokenResponse?.idToken
-                        do {
-                            try self.authState(from: authState)
-                            continuation.resume()
-                        } catch {
-                            continuation.resume(throwing: error)
-                        }
+                    if let authState = authState, let flow = capturedFlow {
+                        continuation.resume(returning: (authState, flow))
                     } else {
                         continuation.resume(throwing: OAuthAuthenticatorError.missingAuthState(cause: error))
                     }
                 }
-                self.currentAuthorizationFlow = currentAuthorizationFlow
             }
         }
+        self.currentAuthorizationFlow = authorizationFlow
+        try self.authState(from: newAuthState)
     }
 
     // TODO: Store state in keychain
@@ -195,7 +197,6 @@ public class OAuthAuthenticator {
     /// Used to write a new state and make sure, that state is also saved to persistent storage, so the state survives if the system kills the app.
     private func authState(from state: OIDAuthState?) throws {
         self._authState = state
-        self.idToken = state?.lastTokenResponse?.idToken
         try saveState(state, authStateKey)
     }
 
