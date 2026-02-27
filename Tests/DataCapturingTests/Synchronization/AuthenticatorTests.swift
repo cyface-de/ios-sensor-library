@@ -22,6 +22,26 @@ import Foundation
 import AppAuth
 @testable import DataCapturing
 
+@Test("Test that logout throws tokenMissing when no idToken is available.", .tags(.authentication, .synchronization))
+func logoutWithNilIdTokenThrowsTokenMissing() async {
+    // Arrange: fresh authenticator with no saved auth state → idToken is nil
+    let testStateKey = "de.cyface.test.authstate.logout"
+    let oocut = OAuthAuthenticator(
+        issuer: URL(string: "http://localhost/")!,
+        redirectUri: URL(string: "http://localhost/callback")!,
+        apiEndpoint: URL(string: "http://localhost/api")!,
+        clientId: "ios-client",
+        authStateKey: testStateKey
+    )
+    // Wipe any leftover state from a previous run so idToken stays nil
+    try? oocut.saveState(nil, testStateKey)
+
+    // Act & Assert
+    await #expect(throws: OAuthAuthenticatorError.tokenMissing) {
+        try await oocut.logout()
+    }
+}
+
 @Test("Test that saving the authentication state and reloading from disk works, as expected.", .tags(.authentication, .synchronization))
 func savingAuthStateHappyPath() async throws {
     // Arrange

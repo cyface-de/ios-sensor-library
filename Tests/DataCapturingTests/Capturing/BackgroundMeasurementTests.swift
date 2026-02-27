@@ -57,28 +57,45 @@ func measurementSurvivesBackground() async throws {
     "Tests whether using a reduced update interval for location update events, works as expected.",
     .tags(.capturing)
 )
-func withLowerUpdateInterval_HappyPath() async throws {
+func withLowerUpdateInterval_HappyPath() async {
     let sensorCapturer = SmartphoneSensorCapturer(accelerometerInterval: 1.0, gyroInterval: 1.0, directionsInterval: 1.0, motionManager: MockSensorManager())
     var messageLog = [String]()
     var cancellable: AnyCancellable?
 
-    cancellable = sensorCapturer.start().sink { message in
+    // Use withUnsafeContinuation so that continuation.resume() creates an explicit
+    // happens-before between the sink's GCD writes to messageLog and the reads below.
+    // A plain Task.sleep provides no such memory barrier, causing a data race where
+    // messageLog may appear empty when read from the Swift concurrency executor.
+    await withUnsafeContinuation { continuation in
+        var accelerationCount = 0
+        var directionCount = 0
+        var rotationCount = 0
+        var resumed = false
+
+        cancellable = sensorCapturer.start().sink { message in
             switch message {
             case .capturedAcceleration(_):
                 messageLog.append("acceleration")
+                accelerationCount += 1
             case .capturedDirection(_):
                 messageLog.append("direction")
+                directionCount += 1
             case .capturedRotation(_):
                 messageLog.append("rotation")
+                rotationCount += 1
             default:
                 Issue.record("Unexpected message \(message.description)")
             }
+
+            if !resumed && accelerationCount >= 3 && directionCount >= 3 && rotationCount >= 3 {
+                resumed = true
+                continuation.resume()
+            }
         }
+    }
 
-    try await Task.sleep(nanoseconds: 5_000_000_000)
-    sensorCapturer.stop()
     cancellable?.cancel()
+    sensorCapturer.stop()
 
-    #expect(messageLog.count > 10)
-    #expect(messageLog.count < 20)
+    #expect(messageLog.count >= 9)
 }

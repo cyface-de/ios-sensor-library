@@ -35,6 +35,28 @@ public enum OAuthAuthenticatorError: Error {
     case invalidState
 }
 
+extension OAuthAuthenticatorError: Equatable {
+    public static func == (lhs: OAuthAuthenticatorError, rhs: OAuthAuthenticatorError) -> Bool {
+        switch (lhs, rhs) {
+        case (.tokenMissing, .tokenMissing),
+             (.invalidToken, .invalidToken),
+             (.invalidResponse, .invalidResponse),
+             (.missingCallbackController, .missingCallbackController),
+             (.missingResponse, .missingResponse),
+             (.invalidState, .invalidState):
+            return true
+        case (.errorResponse(let l), .errorResponse(let r)):
+            return l == r
+        case (.missingAuthState, .missingAuthState):
+            return true  // Error? does not conform to Equatable; causes are ignored
+        case (.discoveryFailed(let l), .discoveryFailed(let r)):
+            return l == r
+        default:
+            return false
+        }
+    }
+}
+
 extension OAuthAuthenticatorError: LocalizedError {
     /// Internationalized human readable description of the error.
     public var errorDescription: String? {
