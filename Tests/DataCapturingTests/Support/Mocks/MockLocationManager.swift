@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Cyface GmbH
+ * Copyright 2024-2026 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -35,8 +35,17 @@ class MockLocationManager: LocationManager {
     /// This is required to submit to the delegate on calls to `CLLocationManagerDelegate.locationManager`.
     let locationManager = CLLocationManager()
 
-    /// Required by the interface but not used as part of this mock.
-    var authorizationStatus: CLAuthorizationStatus = CLAuthorizationStatus.notDetermined
+    /// The authorization status reported by this mock. Tests may change it to simulate the user's decision.
+    var simulatedAuthorizationStatus: CLAuthorizationStatus = CLAuthorizationStatus.notDetermined
+    /// How often the authorization status was read. On a real device each read may block the calling thread.
+    private(set) var authorizationStatusReadCount = 0
+    /// How often the authorization was requested.
+    private(set) var authorizationRequestCount = 0
+
+    var authorizationStatus: CLAuthorizationStatus {
+        authorizationStatusReadCount += 1
+        return simulatedAuthorizationStatus
+    }
 
     /// The timer used to simulate regular location updates.
     var locationValueSimulator: DispatchSourceTimer?
@@ -64,6 +73,7 @@ class MockLocationManager: LocationManager {
     }
     
     func requestAlwaysAuthorization() {
-        authorizationStatus = CLAuthorizationStatus.authorizedAlways
+        authorizationRequestCount += 1
+        simulatedAuthorizationStatus = CLAuthorizationStatus.authorizedAlways
     }
 }

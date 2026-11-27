@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 Cyface GmbH
+ * Copyright 2019-2026 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -35,6 +35,9 @@ public protocol LocationManager {
     /// A wrapper for the delegate receiving the location updates.
     var locationDelegate: CLLocationManagerDelegate? { get set }
     /// The current authorization given by the user of the implementing application.
+    ///
+    /// For a `CLLocationManager`, reading this waits for the system location service and may block the calling thread.
+    /// Read it only in `CLLocationManagerDelegate.locationManagerDidChangeAuthorization(_:)`.
     var authorizationStatus: CLAuthorizationStatus { get }
 
     // MARK: - Methods

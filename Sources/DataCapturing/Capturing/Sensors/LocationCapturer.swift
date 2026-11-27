@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 Cyface GmbH
+ * Copyright 2023-2026 Cyface GmbH
  *
  * This file is part of the Cyface SDK for iOS.
  *
@@ -52,8 +52,6 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
     var hasFix = false
     /// *Combine* publisher to report update events to all registered parties.
     private var messagePublisher: PassthroughSubject<Message, Never>
-    /// The status of the authorization given by the user to the application for getting location updates. If this is for example removed during capturing, capturing must stop or it will crash.
-    private var authorizationStatus: CLAuthorizationStatus
     /**
      Provides access to the devices geo location capturing hardware (such as GPS, GLONASS, GALILEO, etc.)
      and handles geo location updates in the background.
@@ -80,20 +78,24 @@ public class SmartphoneLocationCapturer: NSObject, LocationCapturer {
         self.lifecycleQueue = lifecycleQueue
         self.messagePublisher = PassthroughSubject<Message, Never>()
 
+        // Do not read the authorization status here. Reading it waits for the system location service and blocks the calling thread, which is usually the main thread.
         self.coreLocationManager = locationManagerFactory()
-        self.authorizationStatus = coreLocationManager.authorizationStatus
         super.init()
     }
 
-    /// Start capturing locations and provide a `Publisher` for receiving updates.
+    /**
+     Start capturing locations and provide a `Publisher` for receiving updates.
+
+     Asks the user for the authorization to capture locations, if the user has not decided yet.
+     Location updates start as soon as the authorization is given.
+     If the user withdraws the authorization while capturing, location updates stop until it is given again.
+     */
     public func start() -> AnyPublisher<Message, Never> {
         coreLocationManager.locationDelegate = self
-        if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
-            self.coreLocationManager.startUpdatingLocation()
-        } else {
-            self.coreLocationManager.requestAlwaysAuthorization()
-            self.coreLocationManager.startUpdatingLocation()
-        }
+        // Neither call checks the authorization status, so neither blocks the calling thread.
+        // The system ignores the request if the user has already decided and only delivers locations once the authorization is given.
+        coreLocationManager.requestAlwaysAuthorization()
+        coreLocationManager.startUpdatingLocation()
         return messagePublisher.eraseToAnyPublisher()
     }
 
@@ -176,13 +178,21 @@ extension SmartphoneLocationCapturer: CLLocationManagerDelegate {
         messagePublisher.send(Message.fixLost)
     }
 
-    @objc(locationManager:didChangeAuthorizationStatus:)
-    public func locationManager(_: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    /**
+     The listener method informed about changes of the authorization to capture locations.
+
+     The system calls this when the delegate is set and each time the authorization changes.
+     Reading the authorization status here does not block, since the system has just provided it.
+
+     - Parameter manager: The location manager reporting the change.
+     */
+    public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         guard self.coreLocationManager.locationDelegate != nil else {
             return
         }
 
-        switch status {
+        // Use the wrapped location manager, so tests can provide the status with a mock.
+        switch coreLocationManager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             self.coreLocationManager.startUpdatingLocation()
         default:
